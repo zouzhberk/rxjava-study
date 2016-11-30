@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rxjava-study.iml" filepath="$PROJECT_DIR$/.idea/modules/rxjava-study.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rxjava-study_main.iml" filepath="$PROJECT_DIR$/.idea/modules/rxjava-study_main.iml" group="rxjava-study" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rxjava-study_test.iml" filepath="$PROJECT_DIR$/.idea/modules/rxjava-study_test.iml" group="rxjava-study" />
+    </modules>
+  </component>
+</project>
