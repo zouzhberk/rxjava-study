@@ -25,6 +25,59 @@ public class RxJava2Demo
 {
 
     @Test
+    public void testMaybe()
+    {
+        Maybe.just(1)
+                .map(v -> v + 1)
+                .filter(v -> v == 1)
+                .defaultIfEmpty(2)
+                .test()
+                .assertResult(21);
+
+    }
+
+    @Test
+    public void testCompletable()
+    {
+        Completable.create(new CompletableOnSubscribe()
+        {
+            @Override
+            public void subscribe(CompletableEmitter e) throws Exception
+            {
+                Path filePath = Paths.get("build.gradle");
+                Files.readAllLines(filePath);
+                e.onComplete();
+            }
+        }).subscribe(() -> System.out.println("OK!"),
+                Throwable::printStackTrace);
+    }
+
+    @Test
+    public void testObservableVsStream()
+    {
+        Path filePath = Paths.get("build.gradle");
+
+        Observable.fromCallable(() -> Files.readAllLines(filePath));
+
+
+    }
+
+    @Test
+    public void testNullValue()
+    {
+        Maybe.fromCallable(() -> null)
+                .subscribe(System.out::println, Throwable::printStackTrace);
+        Observable.just(null);
+        Single.just(null);
+        Flowable.just(null);
+        Maybe.just(null);
+        Observable.fromCallable(() -> null)
+                .subscribe(System.out::println, Throwable::printStackTrace);
+        Observable.just(1).map(v -> null)
+                .subscribe(System.out::println, Throwable::printStackTrace);
+    }
+
+    @Test
     public void rxjavaAndReactor()
     {
 

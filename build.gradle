@@ -16,5 +16,7 @@ dependencies {
 
     // https://mvnrepository.com/artifact/io.projectreactor/reactor-core
     compile group: 'io.projectreactor', name: 'reactor-core', version: '3.0.3.RELEASE'
+// https://mvnrepository.com/artifact/com.typesafe.akka/akka-stream_2.12
+    compile group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.4.14'
 
 }

@@ -1,6 +1,8 @@
 响应式编程实践
 ============
 
+[TOC] 
+
 ## 1 响应式介绍
 
 ### 1.1 什么是响应式编程(Reactive Programming)
@@ -32,27 +34,23 @@
 - 统一标准的好处就是 各个实现产生的数据可以方便的转换和消费；
 > 示例
 ```java 
-   @Test
-    public void rxjavaAndReactor()
-    {
-        Path filePath = Paths.get("build.gradle");
-        // RxJava2 to Reactor
-        Flowable<String> flowable = Flowable
-                .fromCallable(() -> Files.readAllLines(filePath))
-                .flatMap(x -> Flowable.fromIterable(x));
-        Flux.from(flowable).count().subscribe(System.out::println);
+    Path filePath = Paths.get("build.gradle");
+    // RxJava2 to Reactor
+    Flowable<String> flowable = Flowable
+            .fromCallable(() -> Files.readAllLines(filePath))
+            .flatMap(x -> Flowable.fromIterable(x));
+    Flux.from(flowable).count().subscribe(System.out::println);
 
-        // Reactor to RxJava2
-        try
-        {
-            Flux<String> flux = Flux.fromIterable(Files.readAllLines(filePath));
-            Flowable.fromPublisher(flux).count()
-                    .subscribe(System.out::println);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+    // Reactor to RxJava2
+    try
+    {
+        Flux<String> flux = Flux.fromIterable(Files.readAllLines(filePath));
+        Flowable.fromPublisher(flux).count()
+                .subscribe(System.out::println);
+    }
+    catch (IOException e)
+    {
+        e.printStackTrace();
     }
 ```
 - Reactive Streams JVM接口由以下四个interface 组成：
@@ -68,6 +66,8 @@
     
     - 通过异步边界(Asynchronous Boundary)[[3]](https://github.com/reactive-streams/reactive-streams-jvm/issues/46)来解耦系统组件。 解偶的先决条件，分离事件/数据流的发送方和接收方的资源使用;
     - 为背压（ back pressure ) 处理定义一种模型。流处理的理想范式是将数据从发布者推送到订阅者，这样发布者就可以快速发布数据，同时通过压力处理来确保速度更快的发布者不会对速度较慢的订阅者造成过载。背压处理通过使用流控制来确保操作的稳定性并能实现优雅降级，从而提供弹性能力。
+
+- 该规范将包含在 JDK 9 的java.util.concurrent.Flow 类中，包含四个接口类[[7]](http://gee.cs.oswego.edu/dl/jsr166/dist/docs/java/util/concurrent/Flow.html)。 
 
 - 适用范围： 适合于流处理的系统有ETL（Extract、Transform、Load）与复杂事件处理（CEP）系统，此外还有报表与分析系统[[4]](https://medium.com/@kvnwbbr/a-journey-into-reactive-streams-5ee2a9cd7e29)。
 
@@ -93,39 +93,125 @@
 https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
 
 
-## 2 RxJava 基础
+## RxJava 基础
 
-### 2.1 RxJava 1 vs RxJava 2
-- RxJava 先于 Reactive Streams 出现；
-- RxJava 2.0 已经按照Reactive-Streams specification规范完全的重写, 基于Java8+;
-- 2.0 已经独立于RxJava 1.x而存在。
+### RxJava现状
 - RxJava 项目地址 <https://github.com/ReactiveX/RxJava>
-
-### 2.2 RxJava2中的函子
-
-#### 2.3.1 Flowable & Observable
-
-Observable : 不支持背压（在RxJava1.x中的Observable 部分支持背压）；
-
-Flowable : Observable新的实现，支持背压，同时实现Reactive Streams 的 Publisher 接口。
+- RxJava 1.x 先于 Reactive Streams 规范出现,部分接口支持Reactive Streams 规范；
+- RxJava 2.0 于 2016.10.29 正式发布[[8]](https://github.com/ReactiveX/RxJava/releases/tag/v2.0.0)，已经按照Reactive-Streams specification规范完全的重写, 基于Java8+;
+- RxJava 2.0已经独立于RxJava 1.x而存在，即 RxJava2(io.reactivex.*)  使用与RxJava1（rx.*） 不同的包名。
 
 
+### RxJava 1 vs RxJava 2
+
+
+- RxJava 2x 不再支持 null 值，如果传入一个null会抛出 NullPointerException
+```java
+    Observable.just(null);
+    Single.just(null);
+    Flowable.just(null);
+    Maybe.just(null);
+    Observable.fromCallable(() -> null)
+            .subscribe(System.out::println, Throwable::printStackTrace);
+    Observable.just(1).map(v -> null)
+            .subscribe(System.out::println, Throwable::printStackTrace);
+
+```
+ - RxJava2 所有的函数接口(Function/Action/Consumer)均设计为可抛出Exception，解决编译异常需要转换问题。
+
+ - RxJava1 中Observable不能很好支持背压，在RxJava2 中将Oberservable实现成不支持背压，而新增Flowable 来支持背压。
+ - 详细参考请参考<<What%27s-different-in-2.0>>[[6]](https://github.com/ReactiveX/RxJava/wiki/What%27s-different-in-2.0)
+
+### RxJava2中的响应式类
+
+#### Flowable & Observable
+
+- **Observable**: 不支持背压；
+
+- **Flowable** : Observable新的实现，支持背压，同时实现Reactive Streams 的 Publisher 接口。
+
+- 什么时候用 Observable:
+    - 一般处理最大不超过1000条数据，并且几乎不会出现内存溢出； 
+    - 如果式GUI 鼠标事件，频率不超过1000 Hz,基本上不会背压（可以结合 sampling/debouncing 操作）；
+    - 如果处理的式同步流而你的Java平台又不支持Java Stream（如果有异常处理，Observable 比Stream也更适合）;
+
+- 什么时候用 Flowable: 
+    - 处理以某种方式产生超过10K的元素；
+    - 文件读取与分析，例如 读取指定行数的请求；
+    - 通过JDBC 读取数据库记录， 也是一个阻塞的和基于拉取模式，并且由ResultSet.next() 控制；
+    - 网络IO流;
+    - 有很多的阻塞和/或 基于拉取的数据源，但是又想得到一个响应式非阻塞接口的。
 
 #### 2.3.2  Single & Completable & Maybe
 
+- **Single**: 可以发射一个单独onSuccess 或 onError消息。它现在按照Reactive-Streams规范被重新设计,并遵循协议 onSubscribe (onSuccess | onError)? .SingleObserver改成了如下的接口;
+```
+interface SingleObserver<T> {
+    void onSubscribe(Disposable d);
+    void onSuccess(T value);
+    void onError(Throwable error);
+}
+```
+
+- **Completable**: 可以发送一个单独的成功或异常的信号，按照Reactive-Streams规范被重新设计,并遵循协议onSubscribe (onComplete | onError)?
+```
+    Completable.create(new CompletableOnSubscribe()
+    {
+        @Override
+        public void subscribe(CompletableEmitter e) throws Exception
+        {
+            Path filePath = Paths.get("build.gradle");
+            Files.readAllLines(filePath);
+            e.onComplete();
+        }
+    }).subscribe(() -> System.out.println("OK!"),
+            Throwable::printStackTrace);
+```
+- **Maybe**:从概念上来说，它是Single 和 Completable 的结合体。它可以发射0个或1个通知或错误的信号, 遵循协议 onSubscribe (onSuccess | onError | onComplete)?。
+```
+    Maybe.just(1)
+            .map(v -> v + 1)
+            .filter(v -> v == 1)
+            .defaultIfEmpty(2)
+            .test()
+            .assertResult(21);
+//        java.lang.AssertionError: Values at position 0 differ; Expected: 21 (class: Integer), Actual: 2 (class: Integer) (latch = 0, values = 1, errors = 0, completions = 1)
+//
+//        at io.reactivex.observers.BaseTestConsumer.fail(BaseTestConsumer.java:133)
+//        ....
+```
+#### RxJava2 主要类关系图
+如下图所示，为RxJava2中的主要类关系图，可清晰知道各响应式类的联系和区别。后面无特别说明均以Flowable说明。
+![Publisher-Subscriber-class-relation.png](Publisher-Subscriber-class-relation.png)
+
+## RxJava 编程实践
+
+我们已经知道 RxJava 为一个扩展的观察者模式，支持ReactiveX 规范给出的一些操作， 同时RxJava2 符合响应式流规范，接下来结合具体的操作描述RxJava2的功能。 
+
+### 数据的产生与消费
 
 
-## 3 RxJava 编程实践
+### 可观察量/生产者的产生
 
-这这一节，结合函子的一些通用操作来实践RxJava2的主要功能 
+- fromArray & fromIterable & just,直接从数组或迭代器中产生；
 
-### 3.1 函数式编程
 
-#### 3.1.1 与Java 8 Streams 类似操作及对比
+- fromFuture & fromCallable ,从多线程回调中产生；
 
-#### 3.1.2 其它实用操作
+- fromPublisher ，从标准(Reactive Streams)的发布者中产生； 
 
-### 3.2 数据的产生与消费(Publisher & Subscriber)
+### 流式操作（函数式编程）
+
+#### 3.2.1 map/flatMap/reduce/filter
+
+
+#### 3.2.2 Collection
+
+
+#### 3.2.1 与Java 8 Streams 类似操作及对比
+
+#### 3.2.2 其它实用操作
+
 
 ### 3.3 异步与并发（Asynchronized & Concurrency）
 
@@ -133,7 +219,7 @@ Flowable : Observable新的实现，支持背压，同时实现Reactive Streams 
 
 ### 3.5 背压(back pressure)
 
-### 
+### 3.6 RxJava 测试
 
 
 
@@ -149,7 +235,7 @@ http://ifeve.com/java%E4%B8%AD%E7%9A%84functor%E4%B8%8Emonad/
 
 1. 响应式宣言.https://github.com/reactivemanifesto/reactivemanifesto/blob/master/README.zh-cn.md
 
-
+2. RxJava 2.0 Released with Support for Reactive Streams Specification. https://www.infoq.com/news/2016/11/rxjava-2-with-reactive-streams
 
 
 
