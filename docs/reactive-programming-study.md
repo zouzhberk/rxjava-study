@@ -251,6 +251,7 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
     Flowable.merge(f1, f2).map(x -> "merge: " + x).subscribe(System.out::println);
 
 ```
+- 
 
 
 ### 流式操作（函数式编程）
