@@ -32,7 +32,9 @@
 
 - 对于JVM，目前已经有多个库实现该标准，RxJava2, akka-streams,Reactor[[5]](https://github.com/reactor/reactor) 等；
 - 统一标准的好处就是 各个实现产生的数据可以方便的转换和消费；
+
 > 示例
+
 ```java 
     Path filePath = Paths.get("build.gradle");
     // RxJava2 to Reactor
@@ -106,6 +108,7 @@ https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive
 
 
 - RxJava 2x 不再支持 null 值，如果传入一个null会抛出 NullPointerException
+
 ```java
     Observable.just(null);
     Single.just(null);
@@ -191,14 +194,64 @@ interface SingleObserver<T> {
 ### 数据的产生与消费
 
 
-### 可观察量/生产者的产生
-
 - fromArray & fromIterable & just,直接从数组或迭代器中产生；
 
+```java
+    List<String> list = Arrays.asList(
+            "blue", "red", "green", "yellow", "orange", "cyan", "purple"
+    );
+    Flowable.fromIterable(list).skip(2).subscribe(System.out::println);
+    Flowable.fromArray(list.toArray()).subscribe(System.out::println);
+    Flowable.just("blue").subscribe(System.out::println);
+```
 
-- fromFuture & fromCallable ,从多线程回调中产生；
+- fromFuture & fromCallable：
+>fromFuture, 事件从非主线程中产生；
+fromCallable, 事件从主线程中产生， 在需要消费时生产；
+```java
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    System.out.println("MAIN: " + Thread.currentThread().getId());
+    Callable<String> callable = () -> {
+        System.out.println("callable [" + Thread.currentThread().getId() + "]: ");
+        Path filePath = Paths.get("build.gradle");
+        return Files.readAllLines(filePath).stream().flatMap(s -> Arrays.stream(s.split
+                (""))).count() + "";
+    };
 
-- fromPublisher ，从标准(Reactive Streams)的发布者中产生； 
+    Future<String> future = executor.submit(callable);
+
+    Consumer<String> onNext = v -> System.out
+            .println("consumer[" + Thread.currentThread().getId() + "]:" + v);
+
+    Flowable.fromCallable(callable).subscribe(onNext);
+    Flowable.fromFuture(future).subscribe(onNext);
+    System.out.println("END");
+```
+- fromPublisher ，从标准(Reactive Streams)的发布者中产生；
+
+- amb & concat & merge;
+
+   -  **amb**: 给定两个或多个Flowable，只发射最先发射数据的Flowable，如下面示例中的f1被发射； 
+
+   - **concat**: 给定多个Flowable， 按照Flowable数组顺序,依次发射数据，不会交错，下面示例中f1,f2中数据依次发射;
+   - **merge**: 给定多个Flowable， 按照Flowable数组中数据发射的顺序组合成新的Flowable，各Flowable数据可能会交错。
+```java
+    Flowable<String> f1 = Flowable.interval(1, TimeUnit.SECONDS).map((index) -> {
+        System.out.println("f1, callable [" + Thread.currentThread().getId() + "]: ");
+        return "flowable one!" + index;
+    }).take(3);
+
+    Flowable<String> f2 = Flowable.interval(1, 2, TimeUnit.SECONDS).map((index) -> {
+        System.out.println("f2, callable [" + Thread.currentThread().getId() + "]: ");
+        return "flowable two! " + index;
+    }).take(3);
+
+    Flowable.ambArray(f1, f2).map(x -> "amb: " + x).subscribe(System.out::println);
+    Flowable.concat(f1, f2).map(x -> "concat: " + x).subscribe(System.out::println);
+    Flowable.merge(f1, f2).map(x -> "merge: " + x).subscribe(System.out::println);
+
+```
+
 
 ### 流式操作（函数式编程）
 
