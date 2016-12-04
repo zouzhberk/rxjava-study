@@ -6,7 +6,6 @@
     <JAVADOC />
     <SOURCES>
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.typesafe.akka/akka-stream_2.12/2.4.14/f0006014d3432c04ff6bb1baab58afec525f7b9b/akka-stream_2.12-2.4.14-sources.jar!/" />
-      <root url="file://$USER_HOME$/jdk1.8.0_60" />
     </SOURCES>
   </library>
 </component>

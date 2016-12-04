@@ -1,24 +1,19 @@
 package com.github.zouzhberk.study.rxjava2;
 
-import akka.actor.Actor;
-import akka.stream.Fusing;
-import akka.stream.Graph;
-import akka.stream.actor.ActorPublisher;
 import io.reactivex.*;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import org.junit.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-import scala.compat.java8.ScalaStreamSupport;
-import scala.io.Source;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -27,17 +22,14 @@ import java.util.stream.Collectors;
 /**
  * Created by clouder on 12/2/16.
  */
-public class RxJavaObservableDemo
-{
+public class RxJavaObservableDemo {
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
 
     }
 
     @Test
-    public void testFromAndJust()
-    {
+    public void testFromAndJust() {
         List<String> list = Arrays.asList(
                 "blue", "red", "green", "yellow", "orange", "cyan", "purple"
         );
@@ -48,31 +40,26 @@ public class RxJavaObservableDemo
         System.out.println("------fromArray-----");
 
 
-        Subscriber<? super String> s = new Subscriber<String>()
-        {
+        Subscriber<? super String> s = new Subscriber<String>() {
             @Override
-            public void onSubscribe(Subscription s)
-            {
+            public void onSubscribe(Subscription s) {
                 System.out.println("onSubscribe," + s);
                 s.request(1);
                 System.out.println("onSubscribe," + s);
             }
 
             @Override
-            public void onNext(String s)
-            {
+            public void onNext(String s) {
                 System.out.println("onNext," + s);
             }
 
             @Override
-            public void onError(Throwable t)
-            {
+            public void onError(Throwable t) {
                 System.out.println("onError," + t);
             }
 
             @Override
-            public void onComplete()
-            {
+            public void onComplete() {
                 System.out.println("onComplete!");
             }
         };
@@ -81,8 +68,7 @@ public class RxJavaObservableDemo
         System.out.println("------fromArray END-----");
     }
 
-    public void testFlowable()
-    {
+    public void testFlowable() {
         Observable.fromPublisher(null);
         Flowable.fromPublisher(null);
 
@@ -93,32 +79,63 @@ public class RxJavaObservableDemo
     }
 
     @Test
-    public void testFromPublisher()
-    {
+    public void testZip() {
+        Flowable<String> f1 = Flowable.intervalRange(1, 10, 1, 1, TimeUnit.SECONDS).map(index -> "f1-" + index);
+        Flowable<String> f2 = Flowable.intervalRange(1, 3, 2, 2, TimeUnit.SECONDS).map(index -> "f2-" + index);
+
+        Flowable.zip(f1, f2, (x, y) -> x + "-" + y).map(x -> "zip-" + x).subscribe(System.out::println);
+
+        Flowable.combineLatest(f1, f2, (x, y) -> x + "-" + y).map(x -> "combineLatest-" + x).subscribe(System.out::println);
+
+
+        try {
+            TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    //@org.testng.annotations.Test
+    public void testFromPublisher() {
         List<String> list = Arrays.asList(
                 "blue", "red", "green", "yellow", "orange", "cyan", "purple"
         );
 
-        Flowable<String> f1 = Flowable.interval(1, TimeUnit.SECONDS).map((index) -> {
-            System.out.println("f1, callable [" + Thread.currentThread().getId() + "]: ");
-            return "flowable one!" + index;
-        }).take(3);
+        Flowable<String> f1 = Flowable.intervalRange(1, 5, 1, 1, TimeUnit.SECONDS).map(index -> "f1-" + index).doOnNext(System.out::println);
+        Flowable<String> f2 = Flowable.intervalRange(1, 3, 2, 2, TimeUnit.SECONDS).map(index -> "f2-" + index).doOnNext(System.out::println);
+//
+//        Flowable.ambArray(f1, f2).map(x -> "amb: " + x).subscribe(System.out::println);
+//        System.out.println("----------concat-----------");
+//        Flowable.concat(f1, f2).map(x -> "concat: " + x).subscribe(System.out::println);
+//
+//        System.out.println("----------merge-----------");
+//        Flowable.merge(f1, f2).map(x -> "merge: " + x).subscribe(System.out::println);
+//
+//        Flowable<String>[] flowables = new Flowable[]{f1, f2};
+//        Flowable.switchOnNext(Flowable.intervalRange(0, 2, 0, 3, TimeUnit.SECONDS).map(i -> flowables[i.intValue()])).map(x -> "switchOnNext-" + x).subscribe(System.out::println);
+//        Flowable.intervalRange(0, 2, 0, 3, TimeUnit.SECONDS).map(i -> flowables[i.intValue()]).switchMap((io.reactivex.functions.Function) Functions.identity()).map(x -> "switchMap-" + x).subscribe(System.out::println);
 
-        Flowable<String> f2 = Flowable.interval(1, 2, TimeUnit.SECONDS).map((index) -> {
-            System.out.println("f2, callable [" + Thread.currentThread().getId() + "]: ");
-            return "flowable two! " + index;
-        }).take(3);
+        ConnectableFlowable<String> cf1 = f1.startWith(Arrays.asList("hello", "world")).publish();
+//        try {
+//            TimeUnit.SECONDS.sleep(3);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        System.out.printf("connect");
+        cf1.connect(System.out::println);
+        cf1.map(x -> "connectable-" + x).subscribe(System.out::println);
+//
+//        cf1.connect(System.out::println);
+//        cf1.map(x -> "connectable1-" + x).subscribe(System.out::println);
+////        f1.publish().connect();
 
-        Flowable.ambArray(f1, f2).map(x -> "amb: " + x).subscribe(System.out::println);
-        System.out.println("----------concat-----------");
-        Flowable.concat(f1, f2).map(x -> "concat: " + x).subscribe(System.out::println);
+        //f1.startWith(Arrays.asList("hello","world")).subscribe(System.out::println);;
 
-        System.out.println("----------merge-----------");
-        Flowable.merge(f1, f2).map(x -> "merge: " + x).subscribe(System.out::println);
         try {
             TimeUnit.SECONDS.sleep(20);
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -126,8 +143,7 @@ public class RxJavaObservableDemo
 
 
     @Test
-    public void testFromFuture()
-    {
+    public void testFromFuture() {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         System.out.println("MAIN: " + Thread.currentThread().getId());
         Callable<String> callable = () ->
@@ -177,15 +193,13 @@ public class RxJavaObservableDemo
         System.out.println("END");
         try {
             executor.awaitTermination(10, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     @Test
-    public void testFromFuture1()
-    {
+    public void testFromFuture1() {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         System.out.println("MAIN: " + Thread.currentThread().getId());
         Callable<String> callable = () -> {
@@ -214,15 +228,13 @@ public class RxJavaObservableDemo
         System.out.println("END");
         try {
             executor.awaitTermination(10, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     @Test
-    public void testProduct()
-    {
+    public void testProduct() {
         System.out.println(Thread.currentThread().getId());
         Disposable a = Flowable
                 .just("asdfasd", "1221ad").subscribeOn(Schedulers

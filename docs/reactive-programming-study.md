@@ -83,18 +83,6 @@
 - RxJava 是 在Java虚拟机上实现的Reactive Extensions（响应式扩展)库;  
 
 
-
-### 1.4 为什么需要响应式编程
-
-
-|| 单个数据 	|  多个数据 | 
-|:--|:--|:--|
-| 同步	|T getData()        |	Iterable<T> getData()   |
-| 异步	|Future<T> getData()|	Observable<T> getData() |
-
-https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
-
-
 ## RxJava 基础
 
 ### RxJava现状
@@ -102,6 +90,17 @@ https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive
 - RxJava 1.x 先于 Reactive Streams 规范出现,部分接口支持Reactive Streams 规范；
 - RxJava 2.0 于 2016.10.29 正式发布[[8]](https://github.com/ReactiveX/RxJava/releases/tag/v2.0.0)，已经按照Reactive-Streams specification规范完全的重写, 基于Java8+;
 - RxJava 2.0已经独立于RxJava 1.x而存在，即 RxJava2(io.reactivex.*)  使用与RxJava1（rx.*） 不同的包名。
+- RxJava 在Android 开发上应用较多；
+
+### RxJava 能处理的问题
+
+|| 单个数据 	|  多个数据 | 
+|:--|:--|:--|
+| 同步	|T getData()        |	Iterable\<T\> getData()   |
+| 异步	|Future\<T\> getData()|	Observable\<T\> getData() |
+
+
+https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
 
 
 ### RxJava 1 vs RxJava 2
@@ -126,6 +125,11 @@ https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive
  - 详细参考请参考<<What%27s-different-in-2.0>>[[6]](https://github.com/ReactiveX/RxJava/wiki/What%27s-different-in-2.0)
 
 ### RxJava2中的响应式类
+
+#### RxJava2 主要类关系图
+如下图所示，为RxJava2中的主要类关系图，可清晰知道各响应式类的联系和区别。后面无特别说明均以Flowable说明。
+![Publisher-Subscriber-class-relation.png](Publisher-Subscriber-class-relation.png)
+
 
 #### Flowable & Observable
 
@@ -183,16 +187,12 @@ interface SingleObserver<T> {
 //        at io.reactivex.observers.BaseTestConsumer.fail(BaseTestConsumer.java:133)
 //        ....
 ```
-#### RxJava2 主要类关系图
-如下图所示，为RxJava2中的主要类关系图，可清晰知道各响应式类的联系和区别。后面无特别说明均以Flowable说明。
-![Publisher-Subscriber-class-relation.png](Publisher-Subscriber-class-relation.png)
 
-## RxJava 编程实践
+## RxJava2 的主要操作
 
-我们已经知道 RxJava 为一个扩展的观察者模式，支持ReactiveX 规范给出的一些操作， 同时RxJava2 符合响应式流规范，接下来结合具体的操作描述RxJava2的功能。 
+我们已经知道 RxJava主要特性为为一个扩展的观察者模式、流式操作和异步编程，支持ReactiveX 规范给出的一些操作， 同时RxJava2 符合响应式流规范，接下来以Flowable为例，按照功能分类讲解RxJava2中的重要操作[[9]](http://reactivex.io/documentation/operators.html);
 
-### 数据的产生与消费
-
+### 创建一个Flowable
 
 - fromArray & fromIterable & just,直接从数组或迭代器中产生；
 
@@ -229,34 +229,45 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 ```
 - fromPublisher ，从标准(Reactive Streams)的发布者中产生；
 
-- amb & concat & merge;
+- amb & concat & merge, 由多个Flowable产生结合;
 
    -  **amb**: 给定两个或多个Flowable，只发射最先发射数据的Flowable，如下面示例中的f1被发射； 
 
    - **concat**: 给定多个Flowable， 按照Flowable数组顺序,依次发射数据，不会交错，下面示例中f1,f2中数据依次发射;
-   - **merge**: 给定多个Flowable， 按照Flowable数组中数据发射的顺序组合成新的Flowable，各Flowable数据可能会交错。
-```java
-    Flowable<String> f1 = Flowable.interval(1, TimeUnit.SECONDS).map((index) -> {
-        System.out.println("f1, callable [" + Thread.currentThread().getId() + "]: ");
-        return "flowable one!" + index;
-    }).take(3);
+   - **merge**: 给定多个Flowable， 按照Flowable数组中数据发射的顺序组合成新的Flowable，各Flowable数据可能会交错；
+   - **switchOnNext**：给定能发射多个Flowable的Flowable,顺序发射各子Flowable,最新发射的子Flowable覆盖当前子Flowable中还未发射的元素。
+    ![zip](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/switchDo.png)
 
-    Flowable<String> f2 = Flowable.interval(1, 2, TimeUnit.SECONDS).map((index) -> {
-        System.out.println("f2, callable [" + Thread.currentThread().getId() + "]: ");
-        return "flowable two! " + index;
-    }).take(3);
+```java
+    Flowable<String> f1 = Flowable.intervalRange(1, 10, 1, 1, TimeUnit.SECONDS).map(index -> "f1-" + index);
+    Flowable<String> f2 = Flowable.intervalRange(1, 3, 2, 2, TimeUnit.SECONDS).map(index -> "f2-" + index);
 
     Flowable.ambArray(f1, f2).map(x -> "amb: " + x).subscribe(System.out::println);
+    System.out.println("----------concat-----------");
     Flowable.concat(f1, f2).map(x -> "concat: " + x).subscribe(System.out::println);
+
+    System.out.println("----------merge-----------");
     Flowable.merge(f1, f2).map(x -> "merge: " + x).subscribe(System.out::println);
 
+    Flowable<String>[] flowables = new Flowable[]{f1, f2};
+    Flowable.switchOnNext(Flowable.intervalRange(0, 2, 0, 3, TimeUnit.SECONDS).map(i -> flowables[i.intValue()]))
+            .map(x -> "switchOnNext-" + x).subscribe(System.out::println);
+    Flowable.intervalRange(0, 2, 0, 3, TimeUnit.SECONDS).map(i -> flowables[i.intValue()])
+            .switchMap((io.reactivex.functions.Function) Functions.identity())
+            .map(x -> "switchMap-" + x).subscribe(System.out::println);
 ```
-- 
+- zip & combineLatest, 多Flowable中元素结合变换
+    - **zip** ：每个Flowable中的元素都按顺序结合变换，直到元素最少Flowable的已经发射完毕；
+    ![zip](https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/zip.png)
+
+    - **combineLatest**: 每个Flowable中的发射的元素都与其他Flowable最近发射的元素结合变换，知道所有的Flowable的元素发射完毕；
+    ![zip](https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png)
 
 
-### 流式操作（函数式编程）
-
-#### 3.2.1 map/flatMap/reduce/filter
+### 转换、过滤与聚合操作
+在Java8中Stream也有包含这些功能的操作，由于多了时间这个维度，在 RxJava 中操作相对更加丰富。
+这里主要介绍一些重点操作。
+#### 3.2.1 转换操作
 
 
 #### 3.2.2 Collection
