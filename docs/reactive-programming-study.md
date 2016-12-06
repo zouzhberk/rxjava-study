@@ -350,7 +350,8 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 - take & skip & first & emlmentAt,精确获取数据(集)
 > take, 类似java8 limit 操作，但是这里支持更多的操作(take/takeLast/takeUntil/takeWhen)，同时支持在时间区间上获取数据集；
 > skip, 类似java8 skip 操作,但是这里的可以扩展到时间区间上
-> first/firstElement, 由 Flowable -> Single/Maybe
+> first/firstElement/last/lastElement, 由 Flowable -> Single/Maybe.
+
 ```java
         Flowable<String> f1 = Flowable
                 .fromArray("blue", "red", "green", "yellow11", "orange", "cyan", "purple"
