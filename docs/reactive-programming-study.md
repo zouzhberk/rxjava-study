@@ -387,7 +387,138 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 
 
 
-### 3.4 异常处理 (Error Handleing)
+### 3.4 错误处理 (Error Handling)
+
+- 无需显示的catch 编译异常，RxJava2 已经支持所有函数接口抛出Exception；
+> 如下示例 会打印第一个异常；
+
+```java
+    Flowable<Long> f1 = Flowable.interval(500, TimeUnit.MILLISECONDS).map(index -> {
+        throw new IOException(index + "");
+    }).map(index -> {
+        throw new IllegalArgumentException(index + "");
+    });
+    Disposable d = f1.subscribe(System.out::println, Throwable::printStackTrace);
+    while (!d.isDisposed()) {
+    }
+```
+- 异常可以被转换,源数据发射终止
+    - 当出现异常时，可以通过 onErrorReturn 转换成一个正常值返回；
+    - 当出现异常时，通过 onErrorResumeNext 自定义一个Publisher返回，意味着可以转换一个异常类型；
+
+```java
+    Flowable<Long> f1 = Flowable.interval(500, TimeUnit.MILLISECONDS).map(index -> {
+        throw new IOException(index + "");
+    }).map(index -> {
+        throw new IllegalArgumentException(index + "");
+    });
+    f1.onErrorReturnItem(-1L).take(5)
+            .subscribe(System.out::println, Throwable::printStackTrace);
+    // 打印 -1 
+    Disposable d = f1.onErrorResumeNext(e -> {
+        if (e instanceof IOException) {
+            return Flowable.error(new UncheckedIOException((IOException) e));
+        }
+        return Flowable.error(e);
+    }).subscribe(System.out::println, Throwable::printStackTrace);
+    // 打印 UncheckedIOException 异常
+    while (!d.isDisposed()) {
+    }
+```
+
+- Flowable,map抛出异常,但数据继续发射
+ >暂没有找到直接方法可以达到，但可以采取如下两种方法达到
+ ```java
+    Function<Long, Long> exceptionMap = x -> {
+        if (new Random().nextInt(5) > 2) {
+            throw new IOException(x + "");
+        }
+        return x;
+    };
+// 使用flatMap + onErrorReturnItem
+    Flowable<Long> f1 = Flowable.interval(500, TimeUnit.MILLISECONDS);
+    f1.flatMap(index -> Flowable.just(index).map(exceptionMap).onErrorReturnItem(-1L))
+    .take(5).subscribe(System.out::println);
+
+//直接封装lift 操作
+   public class ErrorResumeOperator<D, U> implements FlowableOperator<D, U>
+    {
+        private final Function<U, D> function;
+        private final D defaultValue;
+
+        public ErrorResumeOperator(Function<U, D> function, D defaultValue)
+        {
+            this.function = function;
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public Subscriber<? super U> apply(Subscriber<? super D> observer) throws Exception
+        {
+            Subscriber<U> subscriber = new Subscriber<U>()
+            {
+                @Override
+                public void onSubscribe(Subscription s)
+                {
+                    observer.onSubscribe(s);
+                }
+
+                @Override
+                public void onNext(U onNext)
+                {
+                    try {
+                        observer.onNext(function.apply(onNext));
+                    }
+                    catch (Exception e) {
+                        observer.onNext(defaultValue);
+                    }
+                }
+
+                @Override
+                public void onError(Throwable t)
+                {
+                    observer.onError(t);
+                }
+
+                @Override
+                public void onComplete()
+                {
+                    observer.onComplete();
+                }
+            };
+            return subscriber;
+        }
+    }
+
+    Disposable d = f1.lift(new ErrorResumeOperator<>(exceptionMap, -1L)).take(5)
+            .subscribe(System.out::println);
+
+    while (!d.isDisposed()) {
+    }
+
+ ```
+
+- 出错重试(retry)
+>RxJava 提供了retry以及相关的多个操作，提供出错后重新发射数据功能；
+```java
+
+    Function<Long, Long> exceptionMap = x -> {
+        if (new Random().nextInt(5) > 3) {
+            throw new IOException(x + "");
+        }
+        if (new Random().nextInt(6) < 1) {
+            throw new SQLException(x + "");
+        }
+        return x;
+    };
+    Flowable<Long> f1 = Flowable.interval(500, TimeUnit.MILLISECONDS);
+// 仅为 IOException 异常时最多重试3次,其它异常立即打印异常
+    Disposable d = f1.map(exceptionMap).retry(3, e -> e instanceof IOException)
+            .subscribe(System.out::println, Throwable::printStackTrace);
+    while (!d.isDisposed()) {
+    }
+```
+
 
 ### 3.5 背压(back pressure)
 
