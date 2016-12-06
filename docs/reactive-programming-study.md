@@ -229,6 +229,51 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 ```
 - fromPublisher ，从标准(Reactive Streams)的发布者中产生；
 
+- 自定义创建(generate & create)
+> 下面以斐波那契数列产生为例说明 generate & create的使用， generate为RxJava2新增的创建方式。 
+```java
+    class Fib
+    {
+        long a;
+        long b;
+
+        public Fib(long a, long b)
+        {
+            this.a = a;
+            this.b = b;
+        }
+
+        public long fib()
+        {
+            return a + b;
+        }
+    }
+
+    //斐波那契数列
+    Flowable.create(new FlowableOnSubscribe<Fib>()
+    {
+        @Override
+        public void subscribe(FlowableEmitter<Fib> e) throws Exception
+        {
+            Fib start = new Fib(1L, 1L);
+
+            while (!e.isCancelled()) {
+                e.onNext(start);
+                start = new Fib(start.b, start.fib());
+            }
+            e.onComplete();
+        }
+    }, BackpressureStrategy.BUFFER).map(x -> x.fib()).take(10).subscribe(System.out::println);
+
+    Flowable.generate(() -> new Fib(1L, 1L), (x, y) -> {
+        Fib fib = new Fib(x.b, x.fib());
+        y.onNext(fib);
+        return fib;
+    }).ofType(Fib.class).map(x -> x.fib()).take(10).subscribe(System.out::println);
+```
+
+
+
 - amb & concat & merge, 由多个Flowable产生结合;
 
    -  **amb**: 给定两个或多个Flowable，只发射最先发射数据的Flowable，如下面示例中的f1被发射； 
@@ -268,19 +313,78 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 在Java8中Stream也有包含这些功能的操作，由于多了时间这个维度，在 RxJava 中操作相对更加丰富。
 这里主要介绍一些重点操作。
 
-- buffer
-- 
+- buffer & groupBy & window
+>buffer 和 window 都可以按时间或者元素数量窗口，buffer是直接转换成元素集，window是将元素集转换成另一个Flowable，
+>groupBy,按照key 来分组，需要元素发射完成才能消费，如果只是对数据处理使用Java8 groupBy更方便；
 
+```java
+    Flowable<String> f1 = Flowable.intervalRange(1, 10, 1, 1, TimeUnit.SECONDS).delay((t) ->
+            Flowable.timer(t % 3 + new Random().nextLong() % 3, TimeUnit.SECONDS))
+            .map(index -> index % 3 + "-f1-" + index);
+    f1.buffer(5, TimeUnit.SECONDS).map(x -> "buffer-" + x).subscribe(System.out::println);
 
-#### 3.2.2 Collection
+    f1.window(5, TimeUnit.SECONDS).map(x -> x.toList())
+            .subscribe(x -> x.subscribe(System.out::println));
 
+    Disposable b = f1.groupBy((x) -> x.split("-", 2)[0])
+            .subscribe(x -> x.toList().subscribe(System.out::println));
+    Map<String, List<String>> map = f1.toList().blockingGet().stream()
+                .collect(Collectors.groupingBy((x) -> x.split
+                        ("-", 2)[0]));
+    System.out.println(map);
 
-#### 3.2.1 与Java 8 Streams 类似操作及对比
+    while (!b.isDisposed()) {
+    }
 
-#### 3.2.2 其它实用操作
+```
+- debounce & throttleFirst & sample 按照时间区间采集数据
+> debounce 防抖动，两元素发射间隔，在设定的超时时间内将不被发射， 在前端APP应用较多。
+![debounce](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/debounce.png)
 
+> throttle 限流操作，对于 throttleFirst是 取发射后元素，经过间隔时间后的第一个元素进行发射。
+![throttleFirst](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/throttleFirst.s.png)
+
+> sample 数据采样, 对于源数据，发射间隔时间内的最后出现的元素。
+![sample](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/sample.s.png)
+
+- take & skip & first & emlmentAt,精确获取数据(集)
+> take, 类似java8 limit 操作，但是这里支持更多的操作(take/takeLast/takeUntil/takeWhen)，同时支持在时间区间上获取数据集；
+> skip, 类似java8 skip 操作,但是这里的可以扩展到时间区间上
+> first/firstElement, 由 Flowable -> Single/Maybe
+```java
+        Flowable<String> f1 = Flowable
+                .fromArray("blue", "red", "green", "yellow11", "orange", "cyan", "purple"
+                );
+
+        f1.elementAt(4, "hello").subscribe(System.out::println);
+        //out: orange
+        f1.takeUntil(x -> x.length() > 5).map(x -> "takeUntil-" + x).toList()
+                .subscribe(System.out::println);
+        //out: [takeUntil-blue, takeUntil-red, takeUntil-green, takeUntil-yellow11]
+        f1.takeWhile(x -> x.length() <= 5).map(x -> "takeWhile-" + x).toList()
+                .subscribe(System.out::println);
+        //out: [takeWhile-blue, takeWhile-red, takeWhile-green]
+
+        f1.skipWhile(x -> x.length() <= 5).map(x -> "skipWhile-" + x).toList()
+                .subscribe(System.out::println);
+        //[skipWhile-yellow11, skipWhile-orange, skipWhile-cyan, skipWhile-purple]
+
+        Disposable d = f1.delay(v -> Flowable.timer(v.length(), TimeUnit.SECONDS))
+                .skipUntil(Flowable.timer(5, TimeUnit.SECONDS)).map(x -> "skipUntil-" + x)
+                .subscribe(System.out::println);
+//        skipUntil-green
+//        skipUntil-orange
+//        skipUntil-purple
+//        skipUntil-yellow11
+        while (!d.isDisposed()) {
+        }
+
+```
 
 ### 3.3 异步与并发（Asynchronized & Concurrency）
+
+
+
 
 ### 3.4 异常处理 (Error Handleing)
 
