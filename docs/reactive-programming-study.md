@@ -428,19 +428,21 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 
 - Flowable,map抛出异常,但数据继续发射
  >暂没有找到直接方法可以达到，但可以采取如下两种方法达到
- ```java
+
+```java
     Function<Long, Long> exceptionMap = x -> {
         if (new Random().nextInt(5) > 2) {
             throw new IOException(x + "");
         }
         return x;
     };
-// 使用flatMap + onErrorReturnItem
+    
+    // 使用flatMap + onErrorReturnItem
     Flowable<Long> f1 = Flowable.interval(500, TimeUnit.MILLISECONDS);
     f1.flatMap(index -> Flowable.just(index).map(exceptionMap).onErrorReturnItem(-1L))
     .take(5).subscribe(System.out::println);
-
-//直接封装lift 操作
+   
+   //直接封装lift 操作
    public class ErrorResumeOperator<D, U> implements FlowableOperator<D, U>
     {
         private final Function<U, D> function;
@@ -489,14 +491,12 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
             return subscriber;
         }
     }
-
     Disposable d = f1.lift(new ErrorResumeOperator<>(exceptionMap, -1L)).take(5)
             .subscribe(System.out::println);
 
     while (!d.isDisposed()) {
     }
-
- ```
+```
 
 - 出错重试(retry)
 >RxJava 提供了retry以及相关的多个操作，提供出错后重新发射数据功能；
