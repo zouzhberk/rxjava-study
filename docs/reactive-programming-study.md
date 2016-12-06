@@ -22,7 +22,7 @@
 - 可伸缩的[Elastic]：系统在变化的工作负载下保持及时响应。
 - 消息驱动的[Message Driven]：响应式系统依赖异步消息传递来建立组件之间的界限，这一界限确保了松耦合，隔离，位置透明性等特性的实现，还提供了以消息的形式把故障委派出去的手段。
 
-![reactive-feature.png](reactive-traits.svg)
+![reactive-traits.svg](./reactive-traits.svg)
 
 ## 1.3 响应式编程规范
 
@@ -56,11 +56,11 @@
     }
 ```
 - Reactive Streams JVM接口由以下四个interface 组成：
-    - Publisher ： 
+    - Publisher ： 消息发布者
 
-    - Subscriber ：
+    - Subscriber ： 消息订阅者
 
-    - Subscription ：
+    - Subscription ： 一个订阅
 
     - Processor ：
 
@@ -90,21 +90,29 @@
 - RxJava 1.x 先于 Reactive Streams 规范出现,部分接口支持Reactive Streams 规范；
 - RxJava 2.0 于 2016.10.29 正式发布[[8]](https://github.com/ReactiveX/RxJava/releases/tag/v2.0.0)，已经按照Reactive-Streams specification规范完全的重写, 基于Java8+;
 - RxJava 2.0已经独立于RxJava 1.x而存在，即 RxJava2(io.reactivex.*)  使用与RxJava1（rx.*） 不同的包名。
-- RxJava 在Android 开发上应用较多；
+- RxJava 目前在Android 开发上应用较多；
 
-### RxJava 能处理的问题
+### RxJava2 优势
 
+#### 与其它编程模式/库相比
+
+- Rx扩展了观察者模式用于支持数据和事件序列，通过一些的操作符号，统一风格，用户无需关注底层的实现：如线程、同步、线程安全、并发数据结构和非阻塞IO；
 || 单个数据 	|  多个数据 | 
 |:--|:--|:--|
 | 同步	|T getData()        |	Iterable\<T\> getData()   |
 | 异步	|Future\<T\> getData()|	Observable\<T\> getData() |
 
+- 对于单条数据可以选择Future 模式，但是多条异步数据组合，Future就相对不方便；
+
+- 对于同步的多条数据，Observable/Flowable 和 Java8 Stream 都要比Iterable更加方便。
+
+- 对比 Java 8 Stream,都是属于函数式编程(Monad)，Stream主要是对数据集的阻塞处理， 而Rx 是非阻塞的，并且在时间纬度上处理发射的数据 ，RxJava2提供更加丰富的操作集。
+
+- 对比 Reactor-core, 都遵循响应式流规范，Reactor(Flux)和RxJava2(Flowable)可以相互转换, Reactor更多的依赖java8的函数式接口，RxJava2 所有函数式接口都提供异常抛出，在写代码时更加便利。
 
 https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
 
-
-### RxJava 1 vs RxJava 2
-
+#### RxJava 1 vs RxJava 2
 
 - RxJava 2x 不再支持 null 值，如果传入一个null会抛出 NullPointerException
 
@@ -152,7 +160,8 @@ https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive
 #### 2.3.2  Single & Completable & Maybe
 
 - **Single**: 可以发射一个单独onSuccess 或 onError消息。它现在按照Reactive-Streams规范被重新设计,并遵循协议 onSubscribe (onSuccess | onError)? .SingleObserver改成了如下的接口;
-```
+
+```java
 interface SingleObserver<T> {
     void onSubscribe(Disposable d);
     void onSuccess(T value);
@@ -161,7 +170,8 @@ interface SingleObserver<T> {
 ```
 
 - **Completable**: 可以发送一个单独的成功或异常的信号，按照Reactive-Streams规范被重新设计,并遵循协议onSubscribe (onComplete | onError)?
-```
+
+```java
     Completable.create(new CompletableOnSubscribe()
     {
         @Override
@@ -175,13 +185,14 @@ interface SingleObserver<T> {
             Throwable::printStackTrace);
 ```
 - **Maybe**:从概念上来说，它是Single 和 Completable 的结合体。它可以发射0个或1个通知或错误的信号, 遵循协议 onSubscribe (onSuccess | onError | onComplete)?。
-```
-    Maybe.just(1)
-            .map(v -> v + 1)
-            .filter(v -> v == 1)
-            .defaultIfEmpty(2)
-            .test()
-            .assertResult(21);
+
+```java
+Maybe.just(1)
+        .map(v -> v + 1)
+        .filter(v -> v == 1)
+        .defaultIfEmpty(2)
+        .test()
+        .assertResult(21);
 //        java.lang.AssertionError: Values at position 0 differ; Expected: 21 (class: Integer), Actual: 2 (class: Integer) (latch = 0, values = 1, errors = 0, completions = 1)
 //
 //        at io.reactivex.observers.BaseTestConsumer.fail(BaseTestConsumer.java:133)
@@ -338,7 +349,8 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 
 ```
 - debounce & throttleFirst & sample 按照时间区间采集数据
-> debounce 防抖动，两元素发射间隔，在设定的超时时间内将不被发射， 在前端APP应用较多。
+
+>debounce 防抖动，两元素发射间隔，在设定的超时时间内将不被发射， 在前端APP应用较多。
 ![debounce](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/debounce.png)
 
 > throttle 限流操作，对于 throttleFirst是 取发射后元素，经过间隔时间后的第一个元素进行发射。
