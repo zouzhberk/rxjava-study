@@ -73,8 +73,8 @@
 
 - 适用范围： 适合于流处理的系统有ETL（Extract、Transform、Load）与复杂事件处理（CEP）系统，此外还有报表与分析系统[[4]](https://medium.com/@kvnwbbr/a-journey-into-reactive-streams-5ee2a9cd7e29)。
 
-### 1.3.2 响应式扩展（Reactive Extensions, ReactiveX,Rx）
-- ReactiveX是Reactive Extensions的缩写，一般简写为Rx，最初是LINQ的一个扩展，由微软的架构师Erik Meijer领导的团队开发，在2012年11月开源[[1]](http://download.microsoft.com/download/4/E/4/4E4999BA-BC07-4D85-8BB1-4516EC083A42/Rx%20Design%20Guidelines.pdf)；
+### 响应式扩展
+- ReactiveX，Rx是Reactive Extensions的缩写，一般简写为Rx，最初是LINQ的一个扩展，由微软的架构师Erik Meijer领导的团队开发，在2012年11月开源[[1]](http://download.microsoft.com/download/4/E/4/4E4999BA-BC07-4D85-8BB1-4516EC083A42/Rx%20Design%20Guidelines.pdf)；
 
 - Rx是一个编程模型，目标是提供一致的编程接口，帮助开发者更方便的处理异步数据流，Rx库支持.NET、JavaScript和C++，Rx近几年越来越流行了，现在已经支持几乎全部的流行编程语言了，Rx的大部分语言库由ReactiveX这个组织负责维护，比较流行的有RxJava/RxJS/Rx.NET，社区网站是 reactivex.io。
 
@@ -82,6 +82,15 @@
 
 - RxJava 是 在Java虚拟机上实现的Reactive Extensions（响应式扩展)库;  
 
+### 基本概念
+- 同步/异步： 关注的是消息通信机制，同步是指 发出一个*调用*，在没有得到结果之前，该*调用*就不返回，但是一旦调用返回，就得到返回值了；
+而异步是指 *调用*发出后，调用直接返回，但不会立刻得到调用的结果。而是在*调用*发出后，*被调用者*通过状态、通知来通知调用者，或通过回调函数处理这个调用；
+异步强调被动通知。
+- 阻塞/非阻塞：关注的是程序在等待调用结果（消息，返回值）时的状态；阻塞调用是指调用结果返回之前，当前线程会被挂起。调用线程只有在得到结果之后才会返回。
+非阻塞调用指在不能立刻得到结果之前，该调用不会阻塞当前线程。如java8 stream为阻塞式，Future为非阻塞式的；
+非阻塞强调状态主动轮询。
+
+- 并发(Concurrent)与并行(Parallel)：并发性，又称共行性，是指能处理多个同时性活动的能力；并行是指同时发生的两个并发事件，具有并发的含义，而并发则不一定并行，也亦是说并发事件之间不一定要同一时刻发生; `并行`是`并发`的子集。
 
 ## RxJava 基础
 
@@ -111,7 +120,9 @@
 
 - 对比 Reactor-core, 都遵循响应式流规范，Reactor(Flux)和RxJava2(Flowable)可以相互转换, Reactor更多的依赖java8的函数式接口，RxJava2 所有函数式接口都提供异常抛出，在写代码时更加便利。
 
-https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
+- RxJava 函数式风格,简化代码(Rx的操作符通通常可以将复杂的难题简化为很少的几行代码), 异步错误处理,轻松使用并发;
+
+
 
 #### RxJava 1 vs RxJava 2
 
@@ -398,20 +409,64 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 ### 异步与并发（Asynchronized & Concurrency）
 RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行与并发编程。
 
-#### 基本概念
-- 同步/异步： 关注的是消息通信机制，同步是指 发出一个*调用*，在没有得到结果之前，该*调用*就不返回，但是一旦调用返回，就得到返回值了；
-而异步是指 *调用*发出后，调用直接返回，但不会立刻得到调用的结果。而是在*调用*发出后，*被调用者*通过状态、通知来通知调用者，或通过回调函数处理这个调用；
+#### Scheduler 
 
-- 阻塞/非阻塞：关注的是程序在等待调用结果（消息，返回值）时的状态；阻塞调用是指调用结果返回之前，当前线程会被挂起。调用线程只有在得到结果之后才会返回。
-非阻塞调用指在不能立刻得到结果之前，该调用不会阻塞当前线程。如java8 stream为阻塞式，Future为非阻塞式的。
+#### observeOn & subscribeOn & Scheduler
 
-- 并发(Concurrent)与并行(Parallel)：并发性，又称共行性，是指能处理多个同时性活动的能力；并行是指同时发生的两个并发事件，具有并发的含义，而并发则不一定并行，也亦是说并发事件之间不一定要同一时刻发生。
-如使用Java编写多线程程序，如果没有和，
+- subscribeOn 和 observeOn 都是用来切换线程用的,都需要参数 Scheduler.
+- Scheduler ,调度器, 是RxJava 对线程控制器 的 一个抽象,RxJava 已经内置了几个 Scheduler ，它们已经适合大多数的使用场景：
+   - trampoline, 直接在当前线程运行，相当于不指定线程;
+   - computation, 这个 Scheduler 使用的固定的线程池(FixedSchedulerPool)，大小为 CPU 核数, 适用于CPU 密集型计算。
+   - io,I/O 操作（读写文件、读写数据库、网络信息交互等）所使用的 Scheduler。行为模式和 newThread() 差不多，区别在于 io() 的内部实现是是用一个无数量上限的线程池，可以重用空闲的线程，因此多数情况下 io() 比 newThread() 更有效率;
+   - newThread, 总是启用新线程，并在新线程中执行操作；
+   - single， 使用定长为1 的线程池（newScheduledThreadPool(1)），重复利用这个线程;
+   - Schedulers.from， 将java.util.concurrent.Executor 转换成一个调度器实例。
+```java
+    java.util.function.Consumer<Object> pc = x -> System.out
+            .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
+                    .currentThread().getId() + "] :" + x);
+    Executor executor = Executors.newFixedThreadPool(2);
+    Schedulers.from(executor).scheduleDirect(() -> pc.accept("executor one"));
+    Schedulers.from(executor).scheduleDirect(() -> pc.accept("executor two"));
+    Schedulers.trampoline().scheduleDirect(() -> pc.accept("trampoline"), 1, TimeUnit.SECONDS);
+    Schedulers.single().scheduleDirect(() -> pc.accept("single one DONE"));
+    Schedulers.single().scheduleDirect(() -> pc.accept("single two DONE"));
+    Schedulers.computation()
+            .scheduleDirect(() -> pc.accept("computation one DONE"), 1, TimeUnit.SECONDS);
+    Schedulers.computation()
+            .scheduleDirect(() -> pc.accept("computation two DONE"), 1, TimeUnit.SECONDS);
+    Schedulers.io().scheduleDirect(() -> pc.accept("io one DONE"));
+    Schedulers.io().scheduleDirect(() -> pc.accept("io two DONE"), 1, TimeUnit.SECONDS);
+    Schedulers.io().scheduleDirect(() -> pc.accept("io tree DONE"), 1, TimeUnit.SECONDS);
+    Schedulers.newThread().scheduleDirect(() -> pc.accept("newThread tree DONE"));
+```   
 
-#### observeOn & subscribeOn
+- subscribeOn 将Flowable 的数据发射 切换到 Scheduler 所定义的线程， 只有第一个 subscribeOn 操作有效 ；
+
+- observeOn 指定 observeOn 后续操作所在线程，可以联合多个 observeOn 将切换多次 线程 ；
+> 示例
+> Schedulers.newThread() 定义的线程发送数据；
+> Schedulers.computation() 定义的线程 执行doOnNext；
+> Schedulers.single() 执行 subscribe
 
 ```java
+    Consumer<Object> threadConsumer = x -> System.out
+            .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
+                    .currentThread().getId() + "] :" + x);
 
+    Flowable<Path> f1 = Flowable.create((FlowableEmitter<Path> e) -> {
+        Path dir = Paths.get("/home/clouder/berk/workspaces/cattle").toRealPath();
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir)) {
+            Iterator<Path> iter = dirStream.iterator();
+            while (iter.hasNext() && !e.isCancelled()) {
+                e.onNext(iter.next());
+            }
+            e.onComplete();
+        }
+    }, BackpressureStrategy.BUFFER);
+    f1.subscribeOn(Schedulers.newThread()).subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.computation()).take(5).doOnNext(consumer).observeOn(Schedulers
+            .single()).subscribe(consumer);
 ```
 
 
@@ -569,7 +624,7 @@ http://ifeve.com/java%E4%B8%AD%E7%9A%84functor%E4%B8%8Emonad/
 
 2. RxJava 2.0 Released with Support for Reactive Streams Specification. https://www.infoq.com/news/2016/11/rxjava-2-with-reactive-streams
 
-
+3. https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
 
 
 
