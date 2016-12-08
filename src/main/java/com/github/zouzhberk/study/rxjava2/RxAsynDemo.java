@@ -3,7 +3,6 @@ package com.github.zouzhberk.study.rxjava2;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
-import io.reactivex.FlowableTransformer;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import org.junit.Test;
@@ -13,10 +12,15 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Created by clouder on 12/6/16.
@@ -55,8 +59,9 @@ public class RxAsynDemo
     }
 
     @Test
-    public void testSubscribeOn()
+    public void testBlock()
     {
+
         Consumer<Object> consumer = x -> System.out
                 .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
                         .currentThread().getId() + "] :" + x);
@@ -74,9 +79,55 @@ public class RxAsynDemo
             }
         }, BackpressureStrategy.BUFFER);
 
-        f1.subscribeOn(Schedulers.newThread()).subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation()).take(5).doOnNext(consumer).observeOn(Schedulers
-                .single()).subscribe(consumer);
+//        f1.subscribe(System.out::println);
+//
+//        Disposable d = f1.subscribeOn(Schedulers.newThread())
+//                .subscribe(System.out::println);
+//        while (!d.isDisposed()) {
+//
+//        }
+        Flowable<Path> f2 = f1.subscribeOn(Schedulers.newThread());
+        f1.subscribeOn(Schedulers.newThread()).blockingSubscribe(System.out::println);
+        List<Path> list = f1.subscribeOn(Schedulers.newThread()).toList().blockingGet();
+        Iterable<Path> iterator = f2.blockingIterable();
+        Stream<Path> stream = StreamSupport.stream(f2.blockingIterable().spliterator(), false);
+        stream.forEach(System.out::println);
+        System.out.println(list);
+        System.out.println("hello");
+        //f1.blockingSubscribe(System.out::println);
+//        System.out.println(f1.blocking);
+    }
+
+    @Test
+    public void testSubscribeOn()
+    {
+        //Thread.currentThread()
+
+        Consumer<Object> consumer = x -> System.out
+                .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
+                        .currentThread().getId() + "] :" + x);
+
+
+        Flowable<Path> f1 = Flowable.create((FlowableEmitter<Path> e) -> {
+            Path dir = Paths.get("/home/clouder/berk/workspaces/cattle").toRealPath();
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir)) {
+                Iterator<Path> iter = dirStream.iterator();
+                while (iter.hasNext() && !e.isCancelled()) {
+                    consumer.accept("f1");
+                    e.onNext(iter.next());
+                }
+                e.onComplete();
+            }
+        }, BackpressureStrategy.BUFFER);
+
+
+        //java.util.stream.Stream.of("").parallel()
+        f1.filter(Files::isRegularFile).doOnNext(consumer).subscribeOn(Schedulers.newThread())
+                .flatMap(y -> Flowable.just(y).subscribeOn(Schedulers.io())
+                        .map(Files::readAllLines)).map(Collection::size).doOnNext(consumer)
+                .observeOn(Schedulers.computation()).doOnNext(consumer)
+                .sorted(Comparator.naturalOrder())
+                .observeOn(Schedulers.trampoline()).subscribe(consumer);
 
         try {
             TimeUnit.SECONDS.sleep(5);
@@ -84,6 +135,8 @@ public class RxAsynDemo
         catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        //rx.schedulers.Schedulers.immediate().trampoline()
 //        f1.subscribeOn(Schedulers.io()).filter(Files::isHidden).flatMap(
 //
 //        );

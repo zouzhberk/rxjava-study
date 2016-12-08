@@ -409,13 +409,12 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 ### 异步与并发（Asynchronized & Concurrency）
 RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行与并发编程。
 
-#### Scheduler 
 
 #### observeOn & subscribeOn & Scheduler
 
 - subscribeOn 和 observeOn 都是用来切换线程用的,都需要参数 Scheduler.
 - Scheduler ,调度器, 是RxJava 对线程控制器 的 一个抽象,RxJava 已经内置了几个 Scheduler ，它们已经适合大多数的使用场景：
-   - trampoline, 直接在当前线程运行，相当于不指定线程;
+   - trampoline, 直接在当前线程运行（继续上一个操作中，最后处理完成的数据源所处线程，并不一定是主线程），相当于不指定线程;
    - computation, 这个 Scheduler 使用的固定的线程池(FixedSchedulerPool)，大小为 CPU 核数, 适用于CPU 密集型计算。
    - io,I/O 操作（读写文件、读写数据库、网络信息交互等）所使用的 Scheduler。行为模式和 newThread() 差不多，区别在于 io() 的内部实现是是用一个无数量上限的线程池，可以重用空闲的线程，因此多数情况下 io() 比 newThread() 更有效率;
    - newThread, 总是启用新线程，并在新线程中执行操作；
@@ -444,12 +443,14 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
 - subscribeOn 将Flowable 的数据发射 切换到 Scheduler 所定义的线程， 只有第一个 subscribeOn 操作有效 ；
 
 - observeOn 指定 observeOn 后续操作所在线程，可以联合多个 observeOn 将切换多次 线程 ；
-> 示例
-> Schedulers.newThread() 定义的线程发送数据；
-> Schedulers.computation() 定义的线程 执行doOnNext；
-> Schedulers.single() 执行 subscribe
+    > 示例
+    > Schedulers.newThread() 定义的线程发送数据；
+    > 
+    >Schedulers.computation() 定义的线程 执行doOnNext；
+    >
+    >Schedulers.single() 执行 subscribe
 
-```java
+    ```java
     Consumer<Object> threadConsumer = x -> System.out
             .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
                     .currentThread().getId() + "] :" + x);
@@ -467,8 +468,51 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
     f1.subscribeOn(Schedulers.newThread()).subscribeOn(Schedulers.io())
             .observeOn(Schedulers.computation()).take(5).doOnNext(consumer).observeOn(Schedulers
             .single()).subscribe(consumer);
+    ```
+
+#### 多线程并发示例
+上小节给出示例 发射元素都会经过同样的线程切换，元素间不会产生并行执行的效果。
+如果需要达到 类似 Java8 parallel 执行效果。可以采用FlatMap 变换 自定义并发操作，在返回的Flowable进行线程操作，如下示例所示：
+ - f1 中元素会在Schedulers.newThread()中发射；
+ - 读取文本内容的操作(Files::readAllLines, Collection::size) 会在 Schedulers.io() 所指定的线程池执行；
+ - sorted 操作会在  Schedulers.computation() 所指定的线程池中执行；
+ - subscribe() 同样会在 Schedulers.computation() 所指定的线程池中执行；
+ 
+```java
+    f1.filter(Files::isRegularFile).doOnNext(consumer).subscribeOn(Schedulers.newThread())
+            .flatMap(y -> Flowable.just(y).subscribeOn(Schedulers.io())
+                    .map(Files::readAllLines)).map(Collection::size)
+            .observeOn(Schedulers.computation()).doOnNext(consumer)
+            .sorted(Comparator.naturalOrder())
+            .observeOn(Schedulers.trampoline()).subscribe(consumer);
 ```
 
+#### 阻塞与非阻塞示例
+
+ - 从阻塞到非阻塞 我们可以通过 subscribeOn() 来达到；
+```java
+    //f1 为 主线程发射数据的Flowable
+    //会阻塞主线程知道消费完成
+    f1.subscribe(System.out::println);
+    
+    // d会理解返回.
+    Disposable d = f1.subscribeOn(Schedulers.newThread())
+            .subscribe(System.out::println);
+    while (!d.isDisposed()) {
+    }
+```
+- 从非阻塞到阻塞，可以通过blocking* 相关操作来实现
+
+```java
+    Flowable<Path> f2 = f1.subscribeOn(Schedulers.newThread());
+    //f2 为非阻塞flowable
+    // 可以通过 blockingSubscribe 变为在主线程上消费
+    f2.blockingSubscribe(System.out::println);
+    // 也可以通过下面操作返回结果。
+    List<Path> list = f2.toList().blockingGet();
+    Iterable<Path> iterator = f2.blockingIterable();
+
+```
 
 ### 3.4 错误处理 (Error Handling)
 
@@ -604,9 +648,11 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
 ```
 
 
-### 3.5 背压(back pressure)
+### 背压(back pressure)
 
-### 3.6 RxJava 测试
+
+
+### RxJava 测试
 
 
 
