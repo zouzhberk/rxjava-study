@@ -11,18 +11,17 @@ import org.junit.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.awt.*;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by clouder on 12/8/16.
  */
-public class BackpressureDemo
-{
+public class BackpressureDemo {
 
     @Test
-    public void testSpscArrayQueue()
-    {
+    public void testSpscArrayQueue() {
         SpscArrayQueue<String> queue = new SpscArrayQueue<>(3);
         queue.offer("hello");
         queue.offer("hello1");
@@ -44,16 +43,27 @@ public class BackpressureDemo
         System.out.println(linkedQueue.size());
     }
 
+    @Test
+    public void testBackpressure2() throws InterruptedException {
+        // Flowable.interval(1, TimeUnit.SECONDS);
+
+        while (true) {
+            Point point = MouseInfo.getPointerInfo().getLocation();
+            System.out.println(point);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
 
     @Test
-    public void testBackpressure1() throws InterruptedException
-    {
+    public void testBackpressure1() throws InterruptedException {
         int scale = 10;
-        Subscriber<Object> subscriber = new Subscriber<Object>()
-        {
+        Subscriber<Object> subscriber = new Subscriber<Object>() {
             @Override
-            public void onSubscribe(Subscription s)
-            {
+            public void onSubscribe(Subscription s) {
                 s.request(8);
                 System.out.println();
                 System.out.println();
@@ -62,8 +72,7 @@ public class BackpressureDemo
             }
 
             @Override
-            public void onNext(Object aLong)
-            {
+            public void onNext(Object aLong) {
 //                try {
 //                    TimeUnit.MILLISECONDS.sleep(500);
 //                }
@@ -74,15 +83,13 @@ public class BackpressureDemo
             }
 
             @Override
-            public void onError(Throwable t)
-            {
+            public void onError(Throwable t) {
                 System.out.println("throwable!!!!");
                 t.printStackTrace();
             }
 
             @Override
-            public void onComplete()
-            {
+            public void onComplete() {
                 System.out.println("onComplete");
             }
         };
@@ -94,8 +101,7 @@ public class BackpressureDemo
     }
 
     @Test
-    public void testbackpressure() throws InterruptedException
-    {
+    public void testbackpressure() throws InterruptedException {
 
         Consumer<Object> consumer = x -> System.out
                 .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
