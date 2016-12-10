@@ -92,6 +92,7 @@
 
 - 并发(Concurrent)与并行(Parallel)：并发性，又称共行性，是指能处理多个同时性活动的能力；并行是指同时发生的两个并发事件，具有并发的含义，而并发则不一定并行，也亦是说并发事件之间不一定要同一时刻发生; `并行`是`并发`的子集。
 
+- 其它名词： https://github.com/reactivemanifesto/reactivemanifesto/blob/master/glossary.zh-cn.md
 ## RxJava 基础
 
 ### RxJava现状
@@ -530,7 +531,7 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
     }
 ```
 - 异常可以被转换,源数据发射终止
-    - 当出现异常时，可以通过 onErrorReturn 转换成一个正常值返回；
+    - 当出现异常时，可以通过 onErrorReturn* 转换成一个正常值返回；
     - 当出现异常时，通过 onErrorResumeNext 自定义一个Publisher返回，意味着可以转换一个异常类型；
 
 ```java
@@ -648,12 +649,41 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
 ```
 
 
-### 背压(back pressure)
+### 背压(backpressure)
 
+### ConnectableFlowable
+
+####  ConnectableFlowable & publish & connect 
+ - ConnectableFlowable 可连接的Flowable， 不管是否消费，只有调用了connect， 数据就一直在发射，不受消费影响 ('冷' 的Flowable 变成'热'的)
+ - publish 将 普通 Flowable，变成 ConnectableFlowable ；
+ 
+![publishConnect](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/publishConnect.png);
+
+```java
+    ConnectableFlowable<String> f1 = Flowable.generate(() -> new BufferedReader(new InputStreamReader(System.in))
+            , (reader, e) -> {
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null || line.equalsIgnoreCase("exit")) {
+                        break;
+                    }
+                    e.onNext(line);
+                }
+                e.onComplete();
+            }).ofType(String.class).subscribeOn(Schedulers.io()).publish();
+
+    TimeUnit.SECONDS.sleep(5);
+    f1.connect(System.out::println);
+    TimeUnit.SECONDS.sleep(5);
+    f1.observeOn(Schedulers.newThread()).map(x -> "s0- " + x).subscribe(System.out::println);
+    TimeUnit.SECONDS.sleep(5);
+    f1.map(x -> "s1- " + x).subscribe(System.out::println);
+    TimeUnit.SECONDS.sleep(50);
+```
+#### replay
 
 
 ### RxJava 测试
-
 
 
 ## 再谈函数式编程
@@ -672,7 +702,7 @@ http://ifeve.com/java%E4%B8%AD%E7%9A%84functor%E4%B8%8Emonad/
 
 3. https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
 
-
+4. Use reactive streams API to combine akka-streams with rxJava. http://www.smartjava.org/content/use-reactive-streams-api-combine-akka-streams-rxjava
 
 
 

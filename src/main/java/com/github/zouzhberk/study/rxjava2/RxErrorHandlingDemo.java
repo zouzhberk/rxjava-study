@@ -5,7 +5,6 @@ import io.reactivex.FlowableOperator;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.Function;
-import io.reactivex.internal.operators.flowable.FlowableLift;
 import org.junit.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -25,19 +24,58 @@ public class RxErrorHandlingDemo
 {
 
     @Test
+    public void testRetryWithTimeout()
+    {
+        Function<Object, Object> exceptionMap = x -> {
+            if (new Random().nextInt(5) > 3) {
+                throw new IOException(x + "");
+            }
+            if (new Random().nextInt(2) < 1) {
+                throw new SQLException(x + "");
+            }
+            return x;
+        };
+        Flowable<Long> f1 = Flowable.interval(500, TimeUnit.MILLISECONDS);
+        Disposable d = f1.map(x -> "retry- " + x).map(exceptionMap).doOnError
+                (Throwable::printStackTrace).retry(10, e -> {
+            TimeUnit.SECONDS.sleep(2);
+            return e instanceof SQLException;
+        })
+                .retryWhen(attempts -> {
+                    return attempts.zipWith(Flowable.range(1, 3),
+                            (e, i) -> i)
+                            .flatMap
+                                    (i -> {
+                                        System.out.println("delay retry by " + i + " second(s)");
+                                        return Flowable.timer(i, TimeUnit.SECONDS);
+                                    }).doOnNext(System.err::println);
+                })
+                .subscribe(System.out::println, (e) -> {
+                    System.out.println("final error- " + e);
+                }, () -> {
+                    System.out.println("finish OK");
+                });
+        while (!d.isDisposed()) {
+        }
+
+    }
+
+
+    @Test
     public void testRetry()
     {
         Function<Long, Long> exceptionMap = x -> {
             if (new Random().nextInt(5) > 3) {
                 throw new IOException(x + "");
             }
-            if (new Random().nextInt(6) < 1) {
-                throw new SQLException(x + "");
-            }
+//            if (new Random().nextInt(10) < 1) {
+//                throw new SQLException(x + "");
+//            }
             return x;
         };
         Flowable<Long> f1 = Flowable.interval(500, TimeUnit.MILLISECONDS);
-        Disposable d = f1.map(exceptionMap).retry(3, e -> e instanceof IOException)
+        Disposable d = f1.map(exceptionMap).doOnError(Throwable::printStackTrace)
+                .retry(3, e -> e instanceof IOException)
                 .subscribe(System.out::println, Throwable::printStackTrace);
         while (!d.isDisposed()) {
         }
