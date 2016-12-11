@@ -19,6 +19,18 @@ import java.util.concurrent.TimeUnit;
 public class ConnectableFlowableDemo {
 
     @Test
+    public void testCache() throws InterruptedException {
+        Consumer<Object> consumer = v -> System.out.println("[" + System.currentTimeMillis() / 1000 + "] " + v);
+        Flowable<Long> f1 = Flowable.interval(1, TimeUnit.SECONDS).cache();
+
+        f1.map(x -> "x1:" + x).subscribe(consumer);
+        TimeUnit.SECONDS.sleep(6);
+        f1.map(x -> "x2:" + x).subscribe(consumer);
+        TimeUnit.SECONDS.sleep(20);
+
+    }
+
+    @Test
     public void testReplay1() throws Exception {
         Consumer<Object> consumer = v -> System.out.println("[" + System.currentTimeMillis() / 1000 + "] " + v);
         consumer.accept("start");

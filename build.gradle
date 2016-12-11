@@ -16,15 +16,15 @@ dependencies {
 
     // https://mvnrepository.com/artifact/io.projectreactor/reactor-core
     compile group: 'io.projectreactor', name: 'reactor-core', version: '3.0.3.RELEASE'
-// https://mvnrepository.com/artifact/com.typesafe.akka/akka-stream_2.12
-    compile group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.4.14'
-// https://mvnrepository.com/artifact/io.reactivex/rxjava-math
-    compile group: 'io.reactivex', name: 'rxjava-math', version: '1.0.0'
-// https://mvnrepository.com/artifact/io.reactivex/rxjava-debug
-    compile group: 'io.reactivex', name: 'rxjava-debug', version: '1.0.3'
-// https://mvnrepository.com/artifact/io.reactivex/rxapache-http
-    compile group: 'io.reactivex', name: 'rxapache-http', version: '0.21.0'
-// https://mvnrepository.com/artifact/io.reactivex/rxnetty
-    compile group: 'io.reactivex', name: 'rxnetty', version: '0.5.1'
+//// https://mvnrepository.com/artifact/com.typesafe.akka/akka-stream_2.12
+//    compile group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.4.14'
+//// https://mvnrepository.com/artifact/io.reactivex/rxjava-math
+//    compile group: 'io.reactivex', name: 'rxjava-math', version: '1.0.0'
+//// https://mvnrepository.com/artifact/io.reactivex/rxjava-debug
+//    compile group: 'io.reactivex', name: 'rxjava-debug', version: '1.0.3'
+//// https://mvnrepository.com/artifact/io.reactivex/rxapache-http
+//    compile group: 'io.reactivex', name: 'rxapache-http', version: '0.21.0'
+//// https://mvnrepository.com/artifact/io.reactivex/rxnetty
+//    compile group: 'io.reactivex', name: 'rxnetty', version: '0.5.1'
 
 }

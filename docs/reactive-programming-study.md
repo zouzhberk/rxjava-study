@@ -680,7 +680,8 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
     f1.map(x -> "s1- " + x).subscribe(System.out::println);
     TimeUnit.SECONDS.sleep(50);
 ```
-#### replay
+#### replay  & cache
+是地方
 
 
 ### RxJava 测试
