@@ -1,26 +1,64 @@
 package com.github.zouzhberk.study.rxjava2;
 
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Emitter;
 import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.processors.AsyncProcessor;
 import io.reactivex.schedulers.Schedulers;
 import org.junit.Test;
+import org.reactivestreams.Processor;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by clouder on 12/9/16.
  */
-public class ConnectableFlowableDemo {
+public class ConnectableFlowableDemo
+{
+
 
     @Test
-    public void testCache() throws InterruptedException {
-        Consumer<Object> consumer = v -> System.out.println("[" + System.currentTimeMillis() / 1000 + "] " + v);
+    public void testCache1() throws InterruptedException
+    {
+        java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
+                .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
+
+        Flowable<Path> f1 = Flowable.create((FlowableEmitter<Path> e) -> {
+            Path dir = Paths.get("/home/clouder/berk/workspaces/cattle").toRealPath();
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir)) {
+                Iterator<Path> iter = dirStream.iterator();
+                while (iter.hasNext() && !e.isCancelled()) {
+                    Path path = iter.next();
+                    m.apply("-----create").accept(path);
+                    e.onNext(path);
+                }
+                e.onComplete();
+            }
+        }, BackpressureStrategy.BUFFER).cache();
+
+        f1.count().subscribe(m.apply("count"));
+        f1.filter(Files::isDirectory).subscribe(m.apply("filter"));
+
+    }
+
+    @Test
+    public void testCache() throws InterruptedException
+    {
+        Consumer<Object> consumer = v -> System.out
+                .println("[" + System.currentTimeMillis() / 1000 + "] " + v);
         Flowable<Long> f1 = Flowable.interval(1, TimeUnit.SECONDS).cache();
 
         f1.map(x -> "x1:" + x).subscribe(consumer);
@@ -31,25 +69,30 @@ public class ConnectableFlowableDemo {
     }
 
     @Test
-    public void testReplay1() throws Exception {
-        Consumer<Object> consumer = v -> System.out.println("[" + System.currentTimeMillis() / 1000 + "] " + v);
-        consumer.accept("start");
-        ConnectableFlowable<Long> f1 = Flowable.intervalRange(1, 100, 0, 1, TimeUnit.SECONDS).doOnNext(consumer).onBackpressureLatest().replay(4, TimeUnit.SECONDS);
+    public void testReplay1() throws Exception
+    {
 
+        java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
+                .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
+        ConnectableFlowable<Long> f1 = Flowable.intervalRange(1, 100, 0, 1, TimeUnit.SECONDS)
+                .onBackpressureBuffer().replay();
+        m.apply("").accept("start");
         TimeUnit.SECONDS.sleep(5);
         f1.connect();
         TimeUnit.SECONDS.sleep(5);
-        f1.observeOn(Schedulers.single()).map(x -> "o1-" + x).subscribe(consumer);
+        f1.subscribe(m.apply("o1"));
 
         TimeUnit.SECONDS.sleep(5);
-        f1.map(x -> "o2-" + x).subscribe(consumer);
+        f1.subscribe(m.apply("o2"));
         TimeUnit.SECONDS.sleep(20);
 
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException
+    {
 
-        Consumer<Object> consumer = v -> System.out.println("[" + System.currentTimeMillis() / 1000 + "] " + v);
+        Consumer<Object> consumer = v -> System.out
+                .println("[" + System.currentTimeMillis() / 1000 + "] " + v);
         ConnectableFlowable<String> f1 = Flowable.generate(() -> new BufferedReader(new
                         InputStreamReader(System.in))
                 , (reader, e) -> {
@@ -62,7 +105,8 @@ public class ConnectableFlowableDemo {
 
                     }
                     e.onComplete();
-                }).ofType(String.class).subscribeOn(Schedulers.io()).doOnNext(consumer).publish();//.replay(3);
+                }).ofType(String.class).subscribeOn(Schedulers.io()).doOnNext(consumer)
+                .publish();//.replay(3);
 
         //TimeUnit.SECONDS.sleep(5);
         f1.connect(consumer);
@@ -79,7 +123,8 @@ public class ConnectableFlowableDemo {
     }
 
     @Test
-    public void testConnectableFlowable() throws InterruptedException {
+    public void testConnectableFlowable() throws InterruptedException
+    {
         ConnectableFlowable<String> f1 = Flowable.generate(() -> new BufferedReader(new
                         InputStreamReader(System.in))
                 , (reader, e) -> {
@@ -108,7 +153,8 @@ public class ConnectableFlowableDemo {
 
     }
 
-    public static void main1(String[] args) throws InterruptedException {
+    public static void main1(String[] args) throws InterruptedException
+    {
         Consumer<Object> consumer = x -> System.out
                 .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
                         .currentThread().getId() + "] :" + x);
@@ -128,7 +174,8 @@ public class ConnectableFlowableDemo {
         TimeUnit.SECONDS.sleep(50);
     }
 
-    public static ConnectableFlowable<String> from(InputStream inputStream) {
+    public static ConnectableFlowable<String> from(InputStream inputStream)
+    {
         return Flowable.generate(() -> {
             return new BufferedReader(new InputStreamReader(inputStream));
         }, (reader, e) -> {

@@ -4,6 +4,9 @@ import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.internal.functions.Functions;
+import io.reactivex.internal.operators.flowable.FlowableInternalHelper;
 import io.reactivex.internal.queue.SpscArrayQueue;
 import io.reactivex.internal.queue.SpscLinkedArrayQueue;
 import io.reactivex.schedulers.Schedulers;
@@ -18,10 +21,111 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by clouder on 12/8/16.
  */
-public class BackpressureDemo {
+public class BackpressureDemo
+{
+    @Test
+    public void testBackpressureIssue1()
+    {
+        Consumer<Object> consumer = v -> System.out
+                .println("[" + System.currentTimeMillis() / 100 + "] " + v);
+        Flowable<Long> f1 = Flowable.interval(100, TimeUnit.MILLISECONDS);
+        Flowable<Long> f2 = Flowable.interval(200, TimeUnit.MILLISECONDS);
+
+        ConnectableFlowable<Long> f3 = Flowable.zip(f1, f2, (x, y) -> x * 10000 + y).publish();
+
+        f3.publish();
+        f3.doOnSubscribe(s -> s.request(2)).subscribe(consumer);
+
+        try {
+            TimeUnit.SECONDS.sleep(50);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Test
-    public void testSpscArrayQueue() {
+    public void testBackpressureIssueBuffer2()
+    {
+        java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
+                .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
+
+        Flowable<Long> f1 = Flowable.interval(100, TimeUnit.MILLISECONDS)
+                .buffer(200, TimeUnit.MILLISECONDS).map(x -> x.get(0)).doOnNext(m.apply("f1"));
+        Flowable<Long> f2 = Flowable.interval(200, TimeUnit.MILLISECONDS).doOnNext(m.apply("f2"));
+
+        Flowable<Long> f3 = Flowable.zip(f1, f2, (x, y) -> x * 10000 + y).doOnNext(m.apply("f3"));
+
+
+        f3.subscribe(m.apply("consumer"), Functions.ERROR_CONSUMER,
+                Functions.EMPTY_ACTION);
+
+        try {
+            TimeUnit.SECONDS.sleep(50);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testBackpressureIssueBlocking()
+    {
+        java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
+                .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
+
+        Flowable<Long> f1 = Flowable.interval(100, TimeUnit.MILLISECONDS, Schedulers.single())
+                .onBackpressureLatest()
+                .doOnNext(m
+                        .apply("f1"));
+        Flowable<Long> f2 = Flowable.interval(200, TimeUnit.MILLISECONDS, Schedulers.single())
+                .doOnNext(m.apply("f2"));
+
+        Flowable<Long> f3 = Flowable.zip(f1, f2, (x, y) -> x * 10000 + y).doOnNext(m.apply("f3"));
+
+
+        f3.blockingSubscribe(m.apply("out"), Functions.ERROR_CONSUMER,
+                Functions.EMPTY_ACTION);
+
+        try {
+            TimeUnit.SECONDS.sleep(50);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testBackpressureIssue()
+    {
+        java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
+                .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
+
+        Flowable<Long> f1 = Flowable.interval(100, TimeUnit.MILLISECONDS)
+                .sample(200, TimeUnit.MILLISECONDS).doOnNext(m.apply("f1"));
+        Flowable<Long> f2 = Flowable.interval(200, TimeUnit.MILLISECONDS).doOnNext(m.apply("f2"));
+
+        Flowable<Long> f3 = Flowable.zip(f1, f2, (x, y) -> x * 10000 + y).doOnNext(m.apply("f3"));
+
+        //f3.subscribe(consumer);
+//        Consumer<? super Subscription> xxx = x -> {
+//            x.request(1);
+//
+//        };
+        f3.subscribe(m.apply("consumer"), Functions.ERROR_CONSUMER,
+                Functions.EMPTY_ACTION);
+
+        try {
+            TimeUnit.SECONDS.sleep(50);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testSpscArrayQueue()
+    {
         SpscArrayQueue<String> queue = new SpscArrayQueue<>(3);
         queue.offer("hello");
         queue.offer("hello1");
@@ -44,7 +148,8 @@ public class BackpressureDemo {
     }
 
     @Test
-    public void testBackpressure2() throws InterruptedException {
+    public void testBackpressure2() throws InterruptedException
+    {
         // Flowable.interval(1, TimeUnit.SECONDS);
 
         while (true) {
@@ -52,18 +157,22 @@ public class BackpressureDemo {
             System.out.println(point);
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
             }
         }
     }
 
 
     @Test
-    public void testBackpressure1() throws InterruptedException {
+    public void testBackpressure1() throws InterruptedException
+    {
         int scale = 10;
-        Subscriber<Object> subscriber = new Subscriber<Object>() {
+        Subscriber<Object> subscriber = new Subscriber<Object>()
+        {
             @Override
-            public void onSubscribe(Subscription s) {
+            public void onSubscribe(Subscription s)
+            {
                 s.request(8);
                 System.out.println();
                 System.out.println();
@@ -72,7 +181,8 @@ public class BackpressureDemo {
             }
 
             @Override
-            public void onNext(Object aLong) {
+            public void onNext(Object aLong)
+            {
 //                try {
 //                    TimeUnit.MILLISECONDS.sleep(500);
 //                }
@@ -83,13 +193,15 @@ public class BackpressureDemo {
             }
 
             @Override
-            public void onError(Throwable t) {
+            public void onError(Throwable t)
+            {
                 System.out.println("throwable!!!!");
                 t.printStackTrace();
             }
 
             @Override
-            public void onComplete() {
+            public void onComplete()
+            {
                 System.out.println("onComplete");
             }
         };
@@ -101,7 +213,8 @@ public class BackpressureDemo {
     }
 
     @Test
-    public void testbackpressure() throws InterruptedException {
+    public void testbackpressure() throws InterruptedException
+    {
 
         Consumer<Object> consumer = x -> System.out
                 .println("Thread[" + Thread.currentThread().getName() + " ," + Thread

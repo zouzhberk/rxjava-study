@@ -1,18 +1,16 @@
 响应式编程实践
 ============
 
-[TOC] 
 
-## 1 响应式介绍
+## 响应式介绍
 
-### 1.1 什么是响应式编程(Reactive Programming)
+### 什么是响应式编程(Reactive Programming)
 
-- 响应式编程 是一种 基于对变化的响应的一种编程范式;
-- RxJava响应式编程 = 观察者模式(Observer Pattern) + 迭代器模式(Iterator Pattern) + 函数式编程
+- 响应式编程是一种面向数据流和变化传播的编程范式。这意味着可以在编程语言中很方便地表达静态或动态的数据流，而相关的计算模型会自动将变化的值通过数据流进行传播。
 
+### 响应式宣言
 
-### 1.2 响应式宣言（[Reactive Manifesto](https://github.com/reactivemanifesto/reactivemanifesto)）：
-
+响应式宣言,（[Reactive Manifesto](https://github.com/reactivemanifesto/reactivemanifesto)）：
 来自不同领域的组织正在不约而同地发现一些看起来如出一辙的软件构建模式。它们的系统更加稳健，更加有可回复性，更加灵活，并且以更好的定位来满足现代的需求。
 
 响应式宣言针对一个系统而言，并不等同于 响应式编程规范，响应式系统应该满足如下特点：
@@ -22,13 +20,13 @@
 - 可伸缩的[Elastic]：系统在变化的工作负载下保持及时响应。
 - 消息驱动的[Message Driven]：响应式系统依赖异步消息传递来建立组件之间的界限，这一界限确保了松耦合，隔离，位置透明性等特性的实现，还提供了以消息的形式把故障委派出去的手段。
 
-![reactive-traits.svg](./reactive-traits.svg)
+![reactive-traits.svg](http://www.reactivemanifesto.org/images/reactive-traits.svg)
 
-## 1.3 响应式编程规范
+## 响应式编程规范
 
-### 1.3.1 响应式流规范（[Reactive Streams](http://www.reactive-streams.org/)）
+### 响应式流规范
 
-- Reactive Streams 规范提供一个非堵塞的异步流处理的抗压(breakpressure)标准；Reactive Streams的目标是增加抽象层，而不是进行底层的流处理，规范将这些问题留给了库实现来解决。
+- [Reactive Streams](http://www.reactive-streams.org/) 规范提供一个非堵塞的异步流处理的抗压(breakpressure)标准；Reactive Streams的目标是增加抽象层，而不是进行底层的流处理，规范将这些问题留给了库实现来解决。
 
 - 对于JVM，目前已经有多个库实现该标准，RxJava2, akka-streams,Reactor[[5]](https://github.com/reactor/reactor) 等；
 - 统一标准的好处就是 各个实现产生的数据可以方便的转换和消费；
@@ -62,7 +60,7 @@
 
     - Subscription ： 一个订阅
 
-    - Processor ：
+    - Processor ： Publisher + Subscriber 的结合体
 
 - Reactive Streams 规范主要目标[[2]](https://www.infoq.com/news/2015/09/reactive-streams-introduction)：
     
@@ -93,6 +91,7 @@
 - 并发(Concurrent)与并行(Parallel)：并发性，又称共行性，是指能处理多个同时性活动的能力；并行是指同时发生的两个并发事件，具有并发的含义，而并发则不一定并行，也亦是说并发事件之间不一定要同一时刻发生; `并行`是`并发`的子集。
 
 - 其它名词： https://github.com/reactivemanifesto/reactivemanifesto/blob/master/glossary.zh-cn.md
+
 ## RxJava 基础
 
 ### RxJava现状
@@ -295,8 +294,6 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
         return fib;
     }).ofType(Fib.class).map(x -> x.fib()).take(10).subscribe(System.out::println);
 ```
-
-
 
 - amb & concat & merge, 由多个Flowable产生结合;
 
@@ -648,10 +645,7 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
     }
 ```
 
-
-### 背压(backpressure)
-
-### ConnectableFlowable
+### 冷热数据流
 
 ####  ConnectableFlowable & publish & connect 
  - ConnectableFlowable 可连接的Flowable， 不管是否消费，只有调用了connect， 数据就一直在发射，不受消费影响 ('冷' 的Flowable 变成'热'的)
@@ -680,18 +674,114 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
     f1.map(x -> "s1- " + x).subscribe(System.out::println);
     TimeUnit.SECONDS.sleep(50);
 ```
-#### replay  & cache
-是地方
+#### replay
+replay 将Flowable变成 ConnectableFlowable, 在connect之后，确保每次消费都使用相同数据。
+```java
+    java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
+            .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
+    ConnectableFlowable<Long> f1 = Flowable.intervalRange(1, 100, 0, 1, TimeUnit.SECONDS)
+            .onBackpressureBuffer().replay();
+    m.apply("").accept("start");
+    TimeUnit.SECONDS.sleep(5);
+    f1.connect();
+    TimeUnit.SECONDS.sleep(5);
+    f1.subscribe(m.apply("o1"));
 
+    TimeUnit.SECONDS.sleep(5);
+    f1.subscribe(m.apply("o2"));
+    TimeUnit.SECONDS.sleep(20);
+```
+#### cache
+缓存功能，将Flowable进行缓存
+```java
+    java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
+            .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
+
+    Flowable<Path> f1 = Flowable.create((FlowableEmitter<Path> e) -> {
+        Path dir = Paths.get("/home/clouder/berk/workspaces/cattle").toRealPath();
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dir)) {
+            Iterator<Path> iter = dirStream.iterator();
+            while (iter.hasNext() && !e.isCancelled()) {
+                Path path = iter.next();
+                m.apply("-----create").accept(path);
+                e.onNext(path);
+            }
+            e.onComplete();
+        }
+    }, BackpressureStrategy.BUFFER).cache();
+
+    f1.count().subscribe(m.apply("count"));
+    f1.filter(Files::isDirectory).subscribe(m.apply("filter"));
+```
+
+<!-- TOC -->
+
+- [响应式介绍](#%E5%93%8D%E5%BA%94%E5%BC%8F%E4%BB%8B%E7%BB%8D)
+    - [什么是响应式编程(Reactive Programming)](#%E4%BB%80%E4%B9%88%E6%98%AF%E5%93%8D%E5%BA%94%E5%BC%8F%E7%BC%96%E7%A8%8Breactive-programming)
+    - [响应式宣言](#%E5%93%8D%E5%BA%94%E5%BC%8F%E5%AE%A3%E8%A8%80)
+- [响应式编程规范](#%E5%93%8D%E5%BA%94%E5%BC%8F%E7%BC%96%E7%A8%8B%E8%A7%84%E8%8C%83)
+    - [响应式流规范](#%E5%93%8D%E5%BA%94%E5%BC%8F%E6%B5%81%E8%A7%84%E8%8C%83)
+    - [响应式扩展](#%E5%93%8D%E5%BA%94%E5%BC%8F%E6%89%A9%E5%B1%95)
+    - [基本概念](#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5)
+- [RxJava 基础](#rxjava-%E5%9F%BA%E7%A1%80)
+    - [RxJava现状](#rxjava%E7%8E%B0%E7%8A%B6)
+    - [RxJava2 优势](#rxjava2-%E4%BC%98%E5%8A%BF)
+        - [与其它编程模式/库相比](#%E4%B8%8E%E5%85%B6%E5%AE%83%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F%E5%BA%93%E7%9B%B8%E6%AF%94)
+        - [RxJava 1 vs RxJava 2](#rxjava-1-vs-rxjava-2)
+    - [RxJava2中的响应式类](#rxjava2%E4%B8%AD%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F%E7%B1%BB)
+        - [RxJava2 主要类关系图](#rxjava2-%E4%B8%BB%E8%A6%81%E7%B1%BB%E5%85%B3%E7%B3%BB%E5%9B%BE)
+        - [Flowable & Observable](#flowable--observable)
+        - [2.3.2  Single & Completable & Maybe](#232--single--completable--maybe)
+- [RxJava2 的主要操作](#rxjava2-%E7%9A%84%E4%B8%BB%E8%A6%81%E6%93%8D%E4%BD%9C)
+    - [创建一个Flowable](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AAflowable)
+    - [转换、过滤与聚合操作](#%E8%BD%AC%E6%8D%A2%E8%BF%87%E6%BB%A4%E4%B8%8E%E8%81%9A%E5%90%88%E6%93%8D%E4%BD%9C)
+    - [异步与并发（Asynchronized & Concurrency）](#%E5%BC%82%E6%AD%A5%E4%B8%8E%E5%B9%B6%E5%8F%91asynchronized--concurrency)
+        - [observeOn & subscribeOn & Scheduler](#observeon--subscribeon--scheduler)
+        - [多线程并发示例](#%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%A4%BA%E4%BE%8B)
+        - [阻塞与非阻塞示例](#%E9%98%BB%E5%A1%9E%E4%B8%8E%E9%9D%9E%E9%98%BB%E5%A1%9E%E7%A4%BA%E4%BE%8B)
+    - [3.4 错误处理 (Error Handling)](#34-%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86-error-handling)
+    - [冷热数据流](#%E5%86%B7%E7%83%AD%E6%95%B0%E6%8D%AE%E6%B5%81)
+        - [ConnectableFlowable & publish & connect](#connectableflowable--publish--connect)
+        - [replay](#replay)
+        - [cache](#cache)
+    - [背压(backpressur<!-- TOC -->](#%E8%83%8C%E5%8E%8Bbackpressur---toc---)
+    - [RxJava 测试](#rxjava-%E6%B5%8B%E8%AF%95)
+- [Reference](#reference)
+
+<!-- /TOC -->
+问题描述： 在rxjava中会经常遇到一种情况就是被观察者发送消息太快以至于它的操作符或者订阅者不能及时处理相关的消息。那么随之而来的就是如何处理这些未处理的消息。
+
+>如下示例： f1 比 f2 元素发射速度快一倍。而zip是按照发射顺序结合，所以出现f1的产生速度快于其消费速度，因此会有背压问题产生（当发射到一定数量时会有异常抛出）。
+
+```java
+    Consumer<Object> consumer = v -> System.out.println("[" + System.currentTimeMillis() / 100 + "] " + v);
+    Flowable<Long> f1 = Flowable.interval(100, TimeUnit.MILLISECONDS);
+    Flowable<Long> f2 = Flowable.interval(200, TimeUnit.MILLISECONDS);
+
+    Flowable<Long> f3 = Flowable.zip(f1, f2, (x, y) -> x * 10000 + y);
+
+    f3.subscribe(consumer);
+```
+对于出现的背压问题：
+ - Flowable默认队列大小为128，并且规范要求，所有的操作符强制支持背压。
+ - 通过操作节流(Throttling)相关操作(sample 、throttleLast、throttleFirst、throttleWithTimeout、debounce等)来改变Flowable的发射数率；
+
+ - 通过设置缓冲区和窗口(buffer,window)操作,来缓存过剩的数据，然后发送特定数据。
+
+ - 设置背压策略（onBackpressurebuffer & onBackpressureDrop & onBackpressureLatest）  
+    
 
 ### RxJava 测试
+RxJava2 支持test() 操作符，将Flowable转变为 TestSubscriber,从而支持多种断言操作。
+```java
+    List<String> list = Arrays.asList(
+            "orange", "blue", "red", "green", "yellow", "cyan", "purple");
 
+    Flowable.fromIterable(list).subscribeOn(Schedulers.newThread()).sorted().test().assertValues(list.stream().sorted().toArray(String[]::new));
+    Flowable.fromIterable(list).count().test().assertValue(Integer.valueOf(list.size()).longValue());
+    List<String> out1 = Flowable.fromIterable(list).sorted().test().values();
+```
 
-## 再谈函数式编程
-
-### Functor 和 Monads
-
-http://ifeve.com/java%E4%B8%AD%E7%9A%84functor%E4%B8%8Emonad/
 
 
 

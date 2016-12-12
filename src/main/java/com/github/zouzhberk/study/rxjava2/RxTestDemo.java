@@ -21,8 +21,8 @@ public class RxTestDemo {
                 "orange", "blue", "red", "green", "yellow", "cyan", "purple"
         );
 
-//        Flowable.fromIterable(list).subscribeOn(Schedulers.newThread()).sorted().test().assertValues(list.stream().sorted().toArray(String[]::new));
-//        Flowable.fromIterable(list).count().test().assertValue(Integer.valueOf(list.size()).longValue());
+        Flowable.fromIterable(list).subscribeOn(Schedulers.newThread()).sorted().test().assertValues(list.stream().sorted().toArray(String[]::new));
+        Flowable.fromIterable(list).count().test().assertValue(Integer.valueOf(list.size()).longValue());
         List<String> out1 = Flowable.fromIterable(list).sorted().test().values();
         System.out.println(out1);
 
