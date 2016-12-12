@@ -1,8 +1,3 @@
-<!DOCTYPE html>
-<html>
-<title>RxJava2 响应式编程介绍</title>
-
-<xmp theme="united" style="display:none;">
 <!-- vscode-markdown-toc -->
 * 1. [响应式介绍](#)
 	* 1.1. [什么是响应式编程(Reactive Programming)](#ReactiveProgramming)
@@ -798,7 +793,6 @@ RxJava2 支持test() 操作符，将Flowable转变为 TestSubscriber,从而支�
 3. https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
 
 4. Use reactive streams API to combine akka-streams with rxJava. http://www.smartjava.org/content/use-reactive-streams-api-combine-akka-streams-rxjava
-</xmp>
 
-<script src="v/0.2/strapdown.js"></script>
-</html>
+
+
