@@ -26,13 +26,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by clouder on 12/9/16.
  */
-public class ConnectableFlowableDemo
-{
+public class ConnectableFlowableDemo {
 
 
     @Test
-    public void testCache1() throws InterruptedException
-    {
+    public void testCache1() throws InterruptedException {
         java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
                 .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
 
@@ -55,8 +53,7 @@ public class ConnectableFlowableDemo
     }
 
     @Test
-    public void testCache() throws InterruptedException
-    {
+    public void testCache() throws InterruptedException {
         Consumer<Object> consumer = v -> System.out
                 .println("[" + System.currentTimeMillis() / 1000 + "] " + v);
         Flowable<Long> f1 = Flowable.interval(1, TimeUnit.SECONDS).cache();
@@ -69,8 +66,7 @@ public class ConnectableFlowableDemo
     }
 
     @Test
-    public void testReplay1() throws Exception
-    {
+    public void testReplay1() throws Exception {
 
         java.util.function.Function<String, Consumer<Object>> m = s -> v -> System.out
                 .println("[" + System.currentTimeMillis() / 100 + "] " + s + "-" + v);
@@ -88,8 +84,7 @@ public class ConnectableFlowableDemo
 
     }
 
-    public static void main(String[] args) throws InterruptedException
-    {
+    public static void main(String[] args) throws InterruptedException {
 
         Consumer<Object> consumer = v -> System.out
                 .println("[" + System.currentTimeMillis() / 1000 + "] " + v);
@@ -123,8 +118,7 @@ public class ConnectableFlowableDemo
     }
 
     @Test
-    public void testConnectableFlowable() throws InterruptedException
-    {
+    public void testConnectableFlowable() throws InterruptedException {
         ConnectableFlowable<String> f1 = Flowable.generate(() -> new BufferedReader(new
                         InputStreamReader(System.in))
                 , (reader, e) -> {
@@ -153,8 +147,7 @@ public class ConnectableFlowableDemo
 
     }
 
-    public static void main1(String[] args) throws InterruptedException
-    {
+    public static void main1(String[] args) throws InterruptedException {
         Consumer<Object> consumer = x -> System.out
                 .println("Thread[" + Thread.currentThread().getName() + " ," + Thread
                         .currentThread().getId() + "] :" + x);
@@ -174,8 +167,7 @@ public class ConnectableFlowableDemo
         TimeUnit.SECONDS.sleep(50);
     }
 
-    public static ConnectableFlowable<String> from(InputStream inputStream)
-    {
+    public static ConnectableFlowable<String> from(InputStream inputStream) {
         return Flowable.generate(() -> {
             return new BufferedReader(new InputStreamReader(inputStream));
         }, (reader, e) -> {
