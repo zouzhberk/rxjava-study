@@ -3,50 +3,18 @@
 <title>RxJava2 响应式编程介绍</title>
 
 <xmp theme="united" style="display:none;">
-<!-- vscode-markdown-toc -->
-* 1. [响应式介绍](#)
-	* 1.1. [什么是响应式编程(Reactive Programming)](#ReactiveProgramming)
-	* 1.2. [响应式宣言](#-1)
-* 2. [响应式编程规范](#-1)
-	* 2.1. [响应式流规范](#-1)
-	* 2.2. [响应式扩展](#-1)
-	* 2.3. [基本概念](#-1)
-* 3. [RxJava 基础](#RxJava)
-	* 3.1. [RxJava现状](#RxJava-1)
-	* 3.2. [RxJava2 优势](#RxJava2)
-		* 3.2.1. [与其它编程模式/库相比](#-1)
-		* 3.2.2. [RxJava 1 vs RxJava 2](#RxJava1vsRxJava2)
-	* 3.3. [RxJava2中的响应式类](#RxJava2-1)
-		* 3.3.1. [RxJava2 主要类关系图](#RxJava2-1)
-		* 3.3.2. [Flowable & Observable](#FlowableObservable)
-		* 3.3.3. [2.3.2  Single & Completable & Maybe](#SingleCompletableMaybe)
-* 4. [RxJava2 的主要操作](#RxJava2-1)
-	* 4.1. [创建一个Flowable](#Flowable)
-	* 4.2. [转换、过滤与聚合操作](#-1)
-	* 4.3. [异步与并发（Asynchronized & Concurrency）](#AsynchronizedConcurrency)
-		* 4.3.1. [observeOn & subscribeOn & Scheduler](#observeOnsubscribeOnScheduler)
-		* 4.3.2. [多线程并发示例](#-1)
-		* 4.3.3. [阻塞与非阻塞示例](#-1)
-	* 4.4. [错误处理 (Error Handling)](#ErrorHandling)
-	* 4.5. [冷热数据流](#-1)
-		* 4.5.1. [ ConnectableFlowable & publish & connect](#ConnectableFlowablepublishconnect)
-		* 4.5.2. [replay](#replay)
-		* 4.5.3. [cache](#cache)
-	* 4.6. [RxJava 测试](#RxJava-1)
-* 5. [Reference](#Reference)
-
-<!-- /vscode-markdown-toc -->响应式编程实践
-============
+RxJava2 响应式编程介绍
+====================
 
 
 
-##  1. <a name=''></a>响应式介绍
+##  响应式介绍
 
-###  1.1. <a name='ReactiveProgramming'></a>什么是响应式编程(Reactive Programming)
+###  什么是响应式编程(Reactive Programming)
 
 - 响应式编程是一种面向数据流和变化传播的编程范式。这意味着可以在编程语言中很方便地表达静态或动态的数据流，而相关的计算模型会自动将变化的值通过数据流进行传播。
 
-###  1.2. <a name='-1'></a>响应式宣言
+### 响应式宣言
 
 响应式宣言,[Reactive Manifesto](https://github.com/reactivemanifesto/reactivemanifesto)：
 来自不同领域的组织正在不约而同地发现一些看起来如出一辙的软件构建模式。它们的系统更加稳健，更加有可回复性，更加灵活，并且以更好的定位来满足现代的需求。
@@ -60,9 +28,7 @@
 
 ![reactive-traits.svg](http://www.reactivemanifesto.org/images/reactive-traits.svg)
 
-##  2. <a name='-1'></a>响应式编程规范
-
-###  2.1. <a name='-1'></a>响应式流规范
+### 响应式流规范
 
 - [Reactive Streams](http://www.reactive-streams.org/) 规范提供一个非堵塞的异步流处理的抗压(breakpressure)标准；Reactive Streams的目标是增加抽象层，而不是进行底层的流处理，规范将这些问题留给了库实现来解决。
 
@@ -109,7 +75,7 @@
 
 - [适用范围](https://medium.com/@kvnwbbr/a-journey-into-reactive-streams-5ee2a9cd7e29)： 适合于流处理的系统有ETL（Extract、Transform、Load）与复杂事件处理（CEP）系统，此外还有报表与分析系统。
 
-###  2.2. <a name='-1'></a>响应式扩展
+### 响应式扩展
 - 响应式扩展(Reactive Extensions, ReactiveX), 一般简写为Rx，最初是LINQ的一个扩展，由微软的架构师Erik Meijer领导的团队开发，在2012年11月开源[[1]](http://download.microsoft.com/download/4/E/4/4E4999BA-BC07-4D85-8BB1-4516EC083A42/Rx%20Design%20Guidelines.pdf)；
 
 - Rx是一个编程模型，目标是提供一致的编程接口，帮助开发者更方便的处理异步数据流，Rx库支持.NET、JavaScript和C++，Rx近几年越来越流行了，现在已经支持几乎全部的流行编程语言了，Rx的大部分语言库由ReactiveX这个组织负责维护，比较流行的有RxJava/RxJS/Rx.NET，社区网站是 reactivex.io。
@@ -118,7 +84,7 @@
 
 - RxJava 是 在Java虚拟机上实现的Reactive Extensions（响应式扩展)库;  
 
-###  2.3. <a name='-1'></a>基本概念
+### 基本概念
 - 同步/异步： 关注的是消息通信机制，同步是指 发出一个*调用*，在没有得到结果之前，该*调用*就不返回，但是一旦调用返回，就得到返回值了；
 而异步是指 *调用*发出后，调用直接返回，但不会立刻得到调用的结果。而是在*调用*发出后，*被调用者*通过状态、通知来通知调用者，或通过回调函数处理这个调用；
 异步强调被动通知。
@@ -130,18 +96,18 @@
 
 - 其它名词： https://github.com/reactivemanifesto/reactivemanifesto/blob/master/glossary.zh-cn.md
 
-##  3. <a name='RxJava'></a>RxJava 基础
+## RxJava 基础
 
-###  3.1. <a name='RxJava-1'></a>RxJava现状
+### RxJava现状
 - RxJava 项目地址 <https://github.com/ReactiveX/RxJava>
 - RxJava 1.x 先于 Reactive Streams 规范出现,部分接口支持Reactive Streams 规范；
 - RxJava 2.0 于 2016.10.29 [正式发布](https://github.com/ReactiveX/RxJava/releases/tag/v2.0.0)，已经按照Reactive-Streams specification规范完全的重写, 基于Java8+;
 - RxJava 2.0已经独立于RxJava 1.x而存在，即 RxJava2(io.reactivex.*)  使用与RxJava1（rx.*） 不同的包名。
 - RxJava 目前在Android 开发上应用较多；
 
-###  3.2. <a name='RxJava2'></a>RxJava2 优势
+### RxJava2 优势
 
-####  3.2.1. <a name='-1'></a>与其它编程模式/库相比
+#### 与其它编程模式/库相比
 
 - Rx扩展了观察者模式用于支持数据和事件序列，通过一些的操作符号，统一风格，用户无需关注底层的实现：如线程、同步、线程安全、并发数据结构和非阻塞IO；
 
@@ -162,7 +128,7 @@
 
 
 
-####  3.2.2. <a name='RxJava1vsRxJava2'></a>RxJava 1 vs RxJava 2
+#### RxJava 1 vs RxJava 2
 
 - RxJava 2x 不再支持 null 值，如果传入一个null会抛出 NullPointerException
 
@@ -182,14 +148,14 @@
  - RxJava1 中Observable不能很好支持背压，在RxJava2 中将Oberservable实现成不支持背压，而新增Flowable 来支持背压。
  - 详细参考请参考[5]
 
-###  3.3. <a name='RxJava2-1'></a>RxJava2中的响应式类
+### RxJava2中的响应式类
 
-####  3.3.1. <a name='RxJava2-1'></a>RxJava2 主要类关系图
+#### RxJava2 主要类关系图
 如下图所示，为RxJava2中的主要类关系图，可清晰知道各响应式类的联系和区别。后面无特别说明均以Flowable说明。
 ![Publisher-Subscriber-class-relation.png](Publisher-Subscriber-class-relation.png)
 
 
-####  3.3.2. <a name='FlowableObservable'></a>Flowable & Observable
+#### Flowable & Observable
 
 - **Observable**: 不支持背压；
 
@@ -207,7 +173,7 @@
     - 网络IO流;
     - 有很多的阻塞和/或 基于拉取的数据源，但是又想得到一个响应式非阻塞接口的。
 
-####  3.3.3. <a name='SingleCompletableMaybe'></a>2.3.2  Single & Completable & Maybe
+#### 2.3.2  Single & Completable & Maybe
 
 - **Single**: 可以发射一个单独onSuccess 或 onError消息。它现在按照Reactive-Streams规范被重新设计,并遵循协议 onSubscribe (onSuccess | onError)? .SingleObserver改成了如下的接口;
 
@@ -249,11 +215,11 @@ Maybe.just(1)
 //        ....
 ```
 
-##  4. <a name='RxJava2-1'></a>RxJava2 的主要操作
+## RxJava2 的主要操作
 
 我们已经知道 RxJava主要特性为为一个扩展的观察者模式、流式操作和异步编程，支持ReactiveX 规范给出的一些操作， 同时RxJava2 符合响应式流规范，接下来以Flowable为例，按照功能分类讲解RxJava2中的重要操作[[9]](http://reactivex.io/documentation/operators.html);
 
-###  4.1. <a name='Flowable'></a>创建一个Flowable
+### 创建一个Flowable
 
 - fromArray & fromIterable & just,直接从数组或迭代器中产生；
 
@@ -370,7 +336,7 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
     ![zip](https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png)
 
 
-###  4.2. <a name='-1'></a>转换、过滤与聚合操作
+### 转换、过滤与聚合操作
 在Java8中Stream也有包含这些功能的操作，由于多了时间这个维度，在 RxJava 中操作相对更加丰富。
 这里主要介绍一些重点操作。
 
@@ -444,11 +410,11 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 
 ```
 
-###  4.3. <a name='AsynchronizedConcurrency'></a>异步与并发（Asynchronized & Concurrency）
+### 异步与并发（Asynchronized & Concurrency）
 RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行与并发编程。
 
 
-####  4.3.1. <a name='observeOnsubscribeOnScheduler'></a>observeOn & subscribeOn & Scheduler
+#### observeOn & subscribeOn & Scheduler
 
 - subscribeOn 和 observeOn 都是用来切换线程用的,都需要参数 Scheduler.
 - Scheduler ,调度器, 是RxJava 对线程控制器 的 一个抽象,RxJava 已经内置了几个 Scheduler ，它们已经适合大多数的使用场景：
@@ -508,7 +474,7 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
             .single()).subscribe(consumer);
     ```
 
-####  4.3.2. <a name='-1'></a>多线程并发示例
+#### 多线程并发示例
 上小节给出示例 发射元素都会经过同样的线程切换，元素间不会产生并行执行的效果。
 如果需要达到 类似 Java8 parallel 执行效果。可以采用FlatMap 变换 自定义并发操作，在返回的Flowable进行线程操作，如下示例所示：
 
@@ -529,7 +495,7 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
             .observeOn(Schedulers.trampoline()).subscribe(consumer);
 ```
 
-####  4.3.3. <a name='-1'></a>阻塞与非阻塞示例
+#### 阻塞与非阻塞示例
 
  - 从阻塞到非阻塞 我们可以通过 subscribeOn() 来达到；
 ```java
@@ -556,7 +522,7 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
 
 ```
 
-###  4.4. <a name='ErrorHandling'></a>错误处理 (Error Handling)
+### 错误处理 (Error Handling)
 
 - 无需显示的catch 编译异常，RxJava2 已经支持所有函数接口抛出Exception；
 > 如下示例 会打印第一个异常；
@@ -689,9 +655,9 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
     }
 ```
 
-###  4.5. <a name='-1'></a>冷热数据流
+### 冷热数据流
 
-####  4.5.1. <a name='ConnectableFlowablepublishconnect'></a> ConnectableFlowable & publish & connect 
+####  ConnectableFlowable & publish & connect 
  - ConnectableFlowable 可连接的Flowable， 不管是否消费，只有调用了connect， 数据就一直在发射，不受消费影响 ('冷' 的Flowable 变成'热'的)
  - publish 将 普通 Flowable，变成 ConnectableFlowable ；
  
@@ -718,7 +684,7 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
     f1.map(x -> "s1- " + x).subscribe(System.out::println);
     TimeUnit.SECONDS.sleep(50);
 ```
-####  4.5.2. <a name='replay'></a>replay
+#### replay
 replay 将Flowable变成 ConnectableFlowable, 在connect之后，确保每次消费都使用相同数据。
 
 ```java
@@ -736,7 +702,7 @@ replay 将Flowable变成 ConnectableFlowable, 在connect之后，确保每次消
     f1.subscribe(m.apply("o2"));
     TimeUnit.SECONDS.sleep(20);
 ```
-####  4.5.3. <a name='cache'></a>cache
+#### cache
 缓存功能，将Flowable进行缓存
 
 ```java
@@ -781,8 +747,9 @@ replay 将Flowable变成 ConnectableFlowable, 在connect之后，确保每次消
  - 通过设置缓冲区和窗口(buffer,window)操作,来缓存过剩的数据，然后发送特定数据。
 
  - 设置背压策略（onBackpressurebuffer & onBackpressureDrop & onBackpressureLatest）  
+    
 
-###  4.6. <a name='RxJava-1'></a>RxJava 测试
+### RxJava 测试
 RxJava2 支持test() 操作符，将Flowable转变为 TestSubscriber,从而支持多种断言操作。
 ```java
     List<String> list = Arrays.asList(
@@ -793,7 +760,7 @@ RxJava2 支持test() 操作符，将Flowable转变为 TestSubscriber,从而支�
     List<String> out1 = Flowable.fromIterable(list).sorted().test().values();
 ```
 
-##  5. <a name='Reference'></a>Reference
+## Reference
 
 1. 响应式宣言.https://github.com/reactivemanifesto/reactivemanifesto/blob/master/README.zh-cn.md
 
@@ -808,3 +775,36 @@ RxJava2 支持test() 操作符，将Flowable转变为 TestSubscriber,从而支�
 
 <script src="v/0.2/strapdown.js"></script>
 </html>
+<!-- TOC -->
+
+- [响应式介绍](#%E5%93%8D%E5%BA%94%E5%BC%8F%E4%BB%8B%E7%BB%8D)
+    - [什么是响应式编程(Reactive Programming)](#%E4%BB%80%E4%B9%88%E6%98%AF%E5%93%8D%E5%BA%94%E5%BC%8F%E7%BC%96%E7%A8%8Breactive-programming)
+    - [响应式宣言](#%E5%93%8D%E5%BA%94%E5%BC%8F%E5%AE%A3%E8%A8%80)
+    - [响应式流规范](#%E5%93%8D%E5%BA%94%E5%BC%8F%E6%B5%81%E8%A7%84%E8%8C%83)
+    - [响应式扩展](#%E5%93%8D%E5%BA%94%E5%BC%8F%E6%89%A9%E5%B1%95)
+    - [基本概念](#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5)
+- [RxJava 基础](#rxjava-%E5%9F%BA%E7%A1%80)
+    - [RxJava现状](#rxjava%E7%8E%B0%E7%8A%B6)
+    - [RxJava2 优势](#rxjava2-%E4%BC%98%E5%8A%BF)
+        - [与其它编程模式/库相比](#%E4%B8%8E%E5%85%B6%E5%AE%83%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F%E5%BA%93%E7%9B%B8%E6%AF%94)
+        - [RxJava 1 vs RxJava 2](#rxjava-1-vs-rxjava-2)
+    - [RxJava2中的响应式类](#rxjava2%E4%B8%AD%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F%E7%B1%BB)
+        - [RxJava2 主要类关系图](#rxjava2-%E4%B8%BB%E8%A6%81%E7%B1%BB%E5%85%B3%E7%B3%BB%E5%9B%BE)
+        - [Flowable & Observable](#flowable--observable)
+        - [2.3.2  Single & Completable & Maybe](#232--single--completable--maybe)
+- [RxJava2 的主要操作](#rxjava2-%E7%9A%84%E4%B8%BB%E8%A6%81%E6%93%8D%E4%BD%9C)
+    - [创建一个Flowable](#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AAflowable)
+    - [转换、过滤与聚合操作](#%E8%BD%AC%E6%8D%A2%E8%BF%87%E6%BB%A4%E4%B8%8E%E8%81%9A%E5%90%88%E6%93%8D%E4%BD%9C)
+    - [异步与并发（Asynchronized & Concurrency）](#%E5%BC%82%E6%AD%A5%E4%B8%8E%E5%B9%B6%E5%8F%91asynchronized--concurrency)
+        - [observeOn & subscribeOn & Scheduler](#observeon--subscribeon--scheduler)
+        - [多线程并发示例](#%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%A4%BA%E4%BE%8B)
+        - [阻塞与非阻塞示例](#%E9%98%BB%E5%A1%9E%E4%B8%8E%E9%9D%9E%E9%98%BB%E5%A1%9E%E7%A4%BA%E4%BE%8B)
+    - [错误处理 (Error Handling)](#%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86-error-handling)
+    - [冷热数据流](#%E5%86%B7%E7%83%AD%E6%95%B0%E6%8D%AE%E6%B5%81)
+        - [ConnectableFlowable & publish & connect](#connectableflowable--publish--connect)
+        - [replay](#replay)
+        - [cache](#cache)
+    - [RxJava 测试](#rxjava-%E6%B5%8B%E8%AF%95)
+- [Reference](#reference)
+
+<!-- /TOC -->
