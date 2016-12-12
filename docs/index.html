@@ -135,7 +135,7 @@
 ###  3.1. <a name='RxJava-1'></a>RxJava现状
 - RxJava 项目地址 <https://github.com/ReactiveX/RxJava>
 - RxJava 1.x 先于 Reactive Streams 规范出现,部分接口支持Reactive Streams 规范；
-- RxJava 2.0 于 2016.10.29 正式发布[[8]](https://github.com/ReactiveX/RxJava/releases/tag/v2.0.0)，已经按照Reactive-Streams specification规范完全的重写, 基于Java8+;
+- RxJava 2.0 于 2016.10.29 [正式发布](https://github.com/ReactiveX/RxJava/releases/tag/v2.0.0)，已经按照Reactive-Streams specification规范完全的重写, 基于Java8+;
 - RxJava 2.0已经独立于RxJava 1.x而存在，即 RxJava2(io.reactivex.*)  使用与RxJava1（rx.*） 不同的包名。
 - RxJava 目前在Android 开发上应用较多；
 
@@ -147,8 +147,8 @@
 
 || 单个数据 	|  多个数据 | 
 |:--|:--|:--|
-| 同步	|T getData()        |	Iterable\<T\> getData()   |
-| 异步	|Future\<T\> getData()|	Observable\<T\> getData() |
+| 同步	|`T getData()`        |	`Iterable<T> getData()`   |
+| 异步	|`Future<T> getData()`|	`Observable<T> getData()` |
 
 - 对于单条数据可以选择Future 模式，但是多条异步数据组合，Future就相对不方便；
 
@@ -180,7 +180,7 @@
  - RxJava2 所有的函数接口(Function/Action/Consumer)均设计为可抛出Exception，解决编译异常需要转换问题。
 
  - RxJava1 中Observable不能很好支持背压，在RxJava2 中将Oberservable实现成不支持背压，而新增Flowable 来支持背压。
- - 详细参考请参考<<What%27s-different-in-2.0>>[[6]](https://github.com/ReactiveX/RxJava/wiki/What%27s-different-in-2.0)
+ - 详细参考请参考[5]
 
 ###  3.3. <a name='RxJava2-1'></a>RxJava2中的响应式类
 
@@ -269,6 +269,7 @@ Maybe.just(1)
 - fromFuture & fromCallable：
 >fromFuture, 事件从非主线程中产生；
 fromCallable, 事件从主线程中产生， 在需要消费时生产；
+
 ```java
     ExecutorService executor = Executors.newFixedThreadPool(2);
     System.out.println("MAIN: " + Thread.currentThread().getId());
@@ -292,6 +293,7 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 
 - 自定义创建(generate & create)
 > 下面以斐波那契数列产生为例说明 generate & create的使用， generate为RxJava2新增的创建方式。 
+
 ```java
     class Fib
     {
@@ -509,9 +511,13 @@ RxJava 通过一些操作统一了 同步和异步，阻塞与非阻塞，并行
 ####  4.3.2. <a name='-1'></a>多线程并发示例
 上小节给出示例 发射元素都会经过同样的线程切换，元素间不会产生并行执行的效果。
 如果需要达到 类似 Java8 parallel 执行效果。可以采用FlatMap 变换 自定义并发操作，在返回的Flowable进行线程操作，如下示例所示：
+
  - f1 中元素会在Schedulers.newThread()中发射；
+
  - 读取文本内容的操作(Files::readAllLines, Collection::size) 会在 Schedulers.io() 所指定的线程池执行；
+
  - sorted 操作会在  Schedulers.computation() 所指定的线程池中执行；
+ 
  - subscribe() 同样会在 Schedulers.computation() 所指定的线程池中执行；
  
 ```java
@@ -798,6 +804,8 @@ RxJava2 支持test() 操作符，将Flowable转变为 TestSubscriber,从而支�
 3. https://www.lightbend.com/blog/7-ways-washing-dishes-and-message-driven-reactive-systems
 
 4. Use reactive streams API to combine akka-streams with rxJava. http://www.smartjava.org/content/use-reactive-streams-api-combine-akka-streams-rxjava
+
+5. What's different in 2.0.https://github.com/ReactiveX/RxJava/wiki/What%27s-different-in-2.0
 </xmp>
 
 <script src="v/0.2/strapdown.js"></script>
