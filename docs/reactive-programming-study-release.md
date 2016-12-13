@@ -148,7 +148,7 @@ RxJava2 响应式编程介绍
 
 - 对于同步的多条数据，Observable/Flowable 和 Java8 Stream 都要比Iterable更加方便。
 
-- 对比 Java 8 Stream,都是属于函数式编程(Monad)，Stream主要是对数据集的阻塞处理， 而Rx 是非阻塞的，并且在时间纬度上处理发射的数据 ，RxJava2提供更加丰富的操作集。
+- 对比 Java 8 Stream,都是属于函数式编程(Monad)，Stream主要是对数据集的阻塞处理， 而Rx可以是非阻塞的，并且在时间纬度上处理发射的数据 ，RxJava提供更加丰富的操作符。
 
 - 对比 Reactor-core, 都遵循响应式流规范，Reactor(Flux)和RxJava2(Flowable)可以相互转换, Reactor更多的依赖java8的函数式接口，RxJava2 所有函数式接口都提供异常抛出，在写代码时更加便利。
 

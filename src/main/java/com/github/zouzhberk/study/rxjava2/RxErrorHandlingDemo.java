@@ -161,6 +161,12 @@ public class RxErrorHandlingDemo
     }
 
     @Test
+    public void errorOnNext3()
+    {
+        //Flowable.error(new SQLException("asdfdf")).ex;
+    }
+
+    @Test
     public void errorOnNext2()
     {
         Function<Long, Long> exceptionMap = x -> {
