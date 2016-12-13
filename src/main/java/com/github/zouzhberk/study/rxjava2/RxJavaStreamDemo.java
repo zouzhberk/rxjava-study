@@ -1,5 +1,6 @@
 package com.github.zouzhberk.study.rxjava2;
 
+import io.reactivex.processors.AsyncProcessor;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.subjects.PublishSubject;
@@ -13,6 +14,8 @@ public class RxJavaStreamDemo
 
     public static void main(String[] args)
     {
+
+        AsyncProcessor<Object> processor = AsyncProcessor.create();
 
 
     }

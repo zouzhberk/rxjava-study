@@ -147,21 +147,7 @@ public class BackpressureDemo
         System.out.println(linkedQueue.size());
     }
 
-    @Test
-    public void testBackpressure2() throws InterruptedException
-    {
-        // Flowable.interval(1, TimeUnit.SECONDS);
 
-        while (true) {
-            Point point = MouseInfo.getPointerInfo().getLocation();
-            System.out.println(point);
-            try {
-                Thread.sleep(100);
-            }
-            catch (InterruptedException e) {
-            }
-        }
-    }
 
 
     @Test
