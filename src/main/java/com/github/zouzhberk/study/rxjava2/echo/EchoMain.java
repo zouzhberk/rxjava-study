@@ -12,6 +12,7 @@ import org.junit.Test;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.io.Console;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -20,48 +21,42 @@ import java.util.stream.Collectors;
 /**
  * Created by zouzhberk on 12/12/16.
  */
-public class EchoMain
-{
-    public static void printLine(double p, int width)
-    {
+public class EchoMain {
+    public static void printLine(double p, int width) {
         System.out.printf("\r");
         Flowable.range(1, width).map(x -> Math.abs(x - p) < 0.5 ? "*" : "-")
                 .blockingSubscribe(x -> System.out.printf("%s", x));
     }
 
-    public static Flowable<String> getRowData(int width, double... p)
-    {
+    public static Flowable<String> getRowData(int width, double... p) {
         Set<Integer> set = Arrays.stream(p).boxed().mapToInt(x -> x.intValue()).distinct()
                 .boxed().collect(Collectors.toSet());
         return Flowable.concatArray(Flowable.just("\r"), Flowable.range(1, width).map(x -> set
                 .contains(x) ? "*" : "-"));
     }
 
-    public static void renderRowData(int width, double... p)
-    {
+    public static void renderRowData(int width, double... p) {
         Set<Integer> set = Arrays.stream(p).boxed().mapToInt(x -> x.intValue()).distinct()
                 .boxed().collect(Collectors.toSet());
-        System.out.printf("\r");
+        // System.out.printf("\r");
         Flowable.range(1, width).map(x -> set.contains(x) ? "*" : "-").blockingSubscribe(x -> {
             System.out.printf("%s", x);
         });
         System.out.printf("\n");
     }
 
-    public static Flowable<String> getEmptyRowData(int width)
-    {
+    public static Flowable<String> getEmptyRowData(int width) {
         return Flowable.range(1, width).map(x -> "-").startWith("\r");
     }
 
-    public static void printPoints(java.util.List<Point> points, int width, int height)
-    {
+    public static void printPoints(java.util.List<Point> points, int width, int height) {
 
         Map<Integer, List<Point>> map = points.stream()
                 .collect(Collectors.groupingBy(x -> Double.valueOf(x.getY()).intValue()));
 
         Flowable.range(1, height).map(x -> map.getOrDefault(x, Collections.emptyList())).subscribe(
                 x -> {
-                    System.out.printf("\r");
+                    //System.out.printf("\r");
                     renderRowData(width, x.stream().mapToDouble(p -> p.getY()).toArray());
                     Runtime.getRuntime().exec("clear");
                 });
@@ -70,8 +65,7 @@ public class EchoMain
 
 
     @Test
-    public void printRect()
-    {
+    public void printRect() {
 
         Disposable d = Single.fromCallable(() -> {
             Dimension screen = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
@@ -92,24 +86,15 @@ public class EchoMain
 
     }
 
-    public static void printLine(int p, int width)
-    {
+    public static void printLine(int p, int width) {
         System.out.printf("\r");
         Flowable.range(1, width).map(x -> x == p ? "*" : "-")
                 .blockingSubscribe(x -> System.out.printf("%s", x));
     }
 
-    public static void printPointConsole(Point point)
-    {
-        int width = 100;
-        int height = 100;
-        //Flowable.range(0,100).subscribe()
-
-    }
 
     @Test
-    public void testprintline() throws InterruptedException
-    {
+    public void testprintline() throws InterruptedException {
         System.out.printf("\rdasdfasdfads1232\n");
         System.out.printf("\rdasdfasdfads");
         TimeUnit.MILLISECONDS.sleep(500);
@@ -118,24 +103,28 @@ public class EchoMain
 //        printLine(20, 100);
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
+
+
+        //System.out.close();
         ConnectableFlowable<Point> f1 = Flowable.create((FlowableEmitter<Point> e) -> {
             while (!e.isCancelled()) {
                 Point point = MouseInfo.getPointerInfo().getLocation();
                 e.onNext(point);
+
             }
-        }, BackpressureStrategy.LATEST).distinctUntilChanged((x, y) -> {
-            return x.distance(y) < 10;
-        }).subscribeOn(Schedulers.single())
-                .map(x -> new Point(Double.valueOf(x.getX()).intValue() / 10, Double
-                        .valueOf(x.getY()).intValue() / 10))
+        }, BackpressureStrategy.DROP).delay(10, TimeUnit.MILLISECONDS).map(x -> new Point(Double.valueOf(x.getX()).intValue() / 10, Double
+                .valueOf(x.getY()).intValue() / 20))
+                .distinctUntilChanged((x, y) -> {
+                    return x.distance(y) < 2;
+                }).subscribeOn(Schedulers.single())
                 .publish();
 
         f1.connect();
 
-        Disposable d = f1.buffer(10).subscribe(x -> printPoints(x, 144, 90));
 
+        Disposable d = f1.buffer(1).subscribe(x -> printPoints(x, 160, 45));
+        d.dispose();
         while (!d.isDisposed()) {
         }
     }

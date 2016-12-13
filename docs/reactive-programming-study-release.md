@@ -11,7 +11,7 @@ RxJava2 响应式编程介绍
     - [响应式扩展](#%E5%93%8D%E5%BA%94%E5%BC%8F%E6%89%A9%E5%B1%95)
 - [RxJava 基础](#rxjava-%E5%9F%BA%E7%A1%80)
     - [RxJava现状](#rxjava%E7%8E%B0%E7%8A%B6)
-    - [RxJava2 优势](#rxjava2-%E4%BC%98%E5%8A%BF)
+    - [为什么选择 RxJava2](#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9-rxjava2)
         - [与其它编程模式/库相比](#%E4%B8%8E%E5%85%B6%E5%AE%83%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%BC%8F%E5%BA%93%E7%9B%B8%E6%AF%94)
         - [RxJava 1 vs RxJava 2](#rxjava-1-vs-rxjava-2)
     - [RxJava2中的响应式类](#rxjava2%E4%B8%AD%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F%E7%B1%BB)
@@ -39,8 +39,7 @@ RxJava2 响应式编程介绍
 
 ###  什么是响应式编程(Reactive Programming)
 
-- 响应式编程是一种面向数据流和变化传播的编程范式。这意味着可以在编程语言中很方便地表达静态或动态的数据流，而相关的计算模型会自动将变化的值通过数据流进行传播。
-
+- 响应式编程是一种面向数据流和变化传播的编程范式。
 ### 基本概念
 - 同步/异步： 关注的是消息通信机制，同步是指 发出一个*调用*，在没有得到结果之前，该*调用*就不返回，但是一旦调用返回，就得到返回值了；
 而异步是指 *调用*发出后，调用直接返回，但不会立刻得到调用的结果。而是在*调用*发出后，*被调用者*通过状态、通知来通知调用者，或通过回调函数处理这个调用；
@@ -97,7 +96,7 @@ RxJava2 响应式编程介绍
     }
 ```
 - Reactive Streams JVM接口由以下四个interface 组成：
-    - Publisher ： 消息发布者
+    - Publisher ： 消息发布者，异步消息流
 
     - Subscriber ： 消息订阅者
 
@@ -115,9 +114,12 @@ RxJava2 响应式编程介绍
 - [适用范围](https://medium.com/@kvnwbbr/a-journey-into-reactive-streams-5ee2a9cd7e29)： 适合于流处理的系统有ETL（Extract、Transform、Load）与复杂事件处理（CEP）系统，此外还有报表与分析系统。
 
 ### 响应式扩展
-- 响应式扩展(Reactive Extensions, ReactiveX), 一般简写为Rx，最初是LINQ的一个扩展，由微软的架构师Erik Meijer领导的团队开发，在2012年11月开源[[1]](http://download.microsoft.com/download/4/E/4/4E4999BA-BC07-4D85-8BB1-4516EC083A42/Rx%20Design%20Guidelines.pdf)；
+- 响应式扩展(Reactive Extensions, 简写为ReactiveX，Rx),最初是LINQ的一个扩展，由微软的架构师Erik Meijer领导的团队开发，在2012年11月开源[[1]](http://download.microsoft.com/download/4/E/4/4E4999BA-BC07-4D85-8BB1-4516EC083A42/Rx%20Design%20Guidelines.pdf)；
 
-- Rx是一个编程模型，目标是提供一致的编程接口，帮助开发者更方便的处理异步数据流，Rx库支持.NET、JavaScript和C++，Rx近几年越来越流行了，现在已经支持几乎全部的流行编程语言了，Rx的大部分语言库由ReactiveX这个组织负责维护，比较流行的有RxJava/RxJS/Rx.NET，社区网站是 reactivex.io。
+
+- ReactiveX是一个编程模型，目标是提供一致的编程接口，帮助开发者更方便的处理异步数据流，ReactiveX的思想是跨平台的，学习其他语言的基本语法之后，可以做到 “learn once, write everywhere”;
+
+- Rx近几年越来越流行了，现在已经支持几乎全部的流行编程语言了，Rx的大部分语言库由ReactiveX这个组织负责维护，比较流行的有RxJava/RxJS/Rx.NET，社区网站是 reactivex.io。
 
 - Rx = Observables + LINQ + Schedulers。Rx 让开发者可以利用可观察序列和LINQ风格查询操作符来编写异步和基于事件的程序;
 
@@ -133,7 +135,7 @@ RxJava2 响应式编程介绍
 - RxJava 2.0已经独立于RxJava 1.x而存在，即 RxJava2(io.reactivex.*)  使用与RxJava1（rx.*） 不同的包名。
 - RxJava 目前在Android 开发上应用较多；
 
-### RxJava2 优势
+### 为什么选择 RxJava2
 
 #### 与其它编程模式/库相比
 
