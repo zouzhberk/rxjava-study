@@ -22,14 +22,18 @@ import java.util.stream.Collectors;
 /**
  * Created by clouder on 12/2/16.
  */
-public class RxJavaObservableDemo {
+public class RxJavaObservableDemo
+{
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
+
 
     }
 
     @Test
-    public void testFromAndJust() {
+    public void testFromAndJust()
+    {
         List<String> list = Arrays.asList(
                 "blue", "red", "green", "yellow", "orange", "cyan", "purple"
         );
@@ -40,26 +44,31 @@ public class RxJavaObservableDemo {
         System.out.println("------fromArray-----");
 
 
-        Subscriber<? super String> s = new Subscriber<String>() {
+        Subscriber<? super String> s = new Subscriber<String>()
+        {
             @Override
-            public void onSubscribe(Subscription s) {
+            public void onSubscribe(Subscription s)
+            {
                 System.out.println("onSubscribe," + s);
                 s.request(1);
                 System.out.println("onSubscribe," + s);
             }
 
             @Override
-            public void onNext(String s) {
+            public void onNext(String s)
+            {
                 System.out.println("onNext," + s);
             }
 
             @Override
-            public void onError(Throwable t) {
+            public void onError(Throwable t)
+            {
                 System.out.println("onError," + t);
             }
 
             @Override
-            public void onComplete() {
+            public void onComplete()
+            {
                 System.out.println("onComplete!");
             }
         };
@@ -68,7 +77,8 @@ public class RxJavaObservableDemo {
         System.out.println("------fromArray END-----");
     }
 
-    public void testFlowable() {
+    public void testFlowable()
+    {
         Observable.fromPublisher(null);
         Flowable.fromPublisher(null);
 
@@ -79,31 +89,40 @@ public class RxJavaObservableDemo {
     }
 
     @Test
-    public void testZip() {
-        Flowable<String> f1 = Flowable.intervalRange(1, 10, 1, 1, TimeUnit.SECONDS).map(index -> "f1-" + index);
-        Flowable<String> f2 = Flowable.intervalRange(1, 3, 2, 2, TimeUnit.SECONDS).map(index -> "f2-" + index);
+    public void testZip()
+    {
+        Flowable<String> f1 = Flowable.intervalRange(1, 10, 1, 1, TimeUnit.SECONDS)
+                .map(index -> "f1-" + index);
+        Flowable<String> f2 = Flowable.intervalRange(1, 3, 2, 2, TimeUnit.SECONDS)
+                .map(index -> "f2-" + index);
 
-        Flowable.zip(f1, f2, (x, y) -> x + "-" + y).map(x -> "zip-" + x).subscribe(System.out::println);
+        Flowable.zip(f1, f2, (x, y) -> x + "-" + y).map(x -> "zip-" + x)
+                .subscribe(System.out::println);
 
-        Flowable.combineLatest(f1, f2, (x, y) -> x + "-" + y).map(x -> "combineLatest-" + x).subscribe(System.out::println);
+        Flowable.combineLatest(f1, f2, (x, y) -> x + "-" + y).map(x -> "combineLatest-" + x)
+                .subscribe(System.out::println);
 
 
         try {
             TimeUnit.SECONDS.sleep(10);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     @Test
     //@org.testng.annotations.Test
-    public void testFromPublisher() {
+    public void testFromPublisher()
+    {
         List<String> list = Arrays.asList(
                 "blue", "red", "green", "yellow", "orange", "cyan", "purple"
         );
 
-        Flowable<String> f1 = Flowable.intervalRange(1, 5, 1, 1, TimeUnit.SECONDS).map(index -> "f1-" + index).doOnNext(System.out::println);
-        Flowable<String> f2 = Flowable.intervalRange(1, 3, 2, 2, TimeUnit.SECONDS).map(index -> "f2-" + index).doOnNext(System.out::println);
+        Flowable<String> f1 = Flowable.intervalRange(1, 5, 1, 1, TimeUnit.SECONDS)
+                .map(index -> "f1-" + index).doOnNext(System.out::println);
+        Flowable<String> f2 = Flowable.intervalRange(1, 3, 2, 2, TimeUnit.SECONDS)
+                .map(index -> "f2-" + index).doOnNext(System.out::println);
 //
 //        Flowable.ambArray(f1, f2).map(x -> "amb: " + x).subscribe(System.out::println);
 //        System.out.println("----------concat-----------");
@@ -135,7 +154,8 @@ public class RxJavaObservableDemo {
 
         try {
             TimeUnit.SECONDS.sleep(20);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -143,7 +163,8 @@ public class RxJavaObservableDemo {
 
 
     @Test
-    public void testFromFuture() {
+    public void testFromFuture()
+    {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         System.out.println("MAIN: " + Thread.currentThread().getId());
         Callable<String> callable = () ->
@@ -193,13 +214,15 @@ public class RxJavaObservableDemo {
         System.out.println("END");
         try {
             executor.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     @Test
-    public void testFromFuture1() {
+    public void testFromFuture1()
+    {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         System.out.println("MAIN: " + Thread.currentThread().getId());
         Callable<String> callable = () -> {
@@ -228,13 +251,15 @@ public class RxJavaObservableDemo {
         System.out.println("END");
         try {
             executor.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     @Test
-    public void testProduct() {
+    public void testProduct()
+    {
         System.out.println(Thread.currentThread().getId());
         Disposable a = Flowable
                 .just("asdfasd", "1221ad").subscribeOn(Schedulers

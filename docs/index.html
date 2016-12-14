@@ -340,8 +340,8 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
    -  **amb**: 给定两个或多个Flowable，只发射最先发射数据的Flowable，如下面示例中的f1被发射； 
 
    - **concat**: 给定多个Flowable， 按照Flowable数组顺序,依次发射数据，不会交错，下面示例中f1,f2中数据依次发射;
-   - **merge**: 给定多个Flowable， 按照Flowable数组中数据发射的顺序组合成新的Flowable，各Flowable数据可能会交错；
-   - **switchOnNext**：给定能发射多个Flowable的Flowable,顺序发射各子Flowable,最新发射的子Flowable覆盖当前子Flowable中还未发射的元素。
+   - **merge**: 给定多个Flowable， 按照Flowable数组中数据发射的顺序组合成新的Flowable，各Flowable数据可能会交错(等价于转换操作中的flatMap)；
+   - **switchOnNext**：给定能发射多个Flowable的Flowable,顺序发射各子Flowable,最新发射的子Flowable覆盖当前子Flowable中还未发射的元素(由switchMap实现)。
     ![zip](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/switchDo.png)
 
 ```java
@@ -400,7 +400,8 @@ fromCallable, 事件从主线程中产生， 在需要消费时生产；
 ```
 - debounce & throttleFirst & sample 按照时间区间采集数据
 
->debounce 防抖动，两元素发射间隔，在设定的超时时间内将不被发射， 在前端APP应用较多。
+>debounce 防抖动，元素发射后在设定的超时时间内没有其它元素发射，则将此元素用于后续处理， 在前端APP应用较多。
+> 如果是空间上的防抖动可以利用distinctUntilChanged操作符。
 ![debounce](https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/debounce.png)
 
 > throttle 限流操作，对于 throttleFirst是 取发射后元素，经过间隔时间后的第一个元素进行发射。
