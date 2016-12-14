@@ -28,4 +28,8 @@ dependencies {
 //// https://mvnrepository.com/artifact/io.reactivex/rxnetty
 //    compile group: 'io.reactivex', name: 'rxnetty', version: '0.5.1'
 
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.retrofit2:converter-gson:latest.version'
+    compile 'com.squareup.retrofit2:adapter-rxjava2:latest.version'
+
 }
