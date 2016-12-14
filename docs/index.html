@@ -84,7 +84,7 @@ RxJava2 响应式编程介绍
 
 ### 响应式流规范
 
-- [Reactive Streams](http://www.reactive-streams.org/) 规范提供一个非堵塞的异步流处理的抗压(breakpressure)标准；Reactive Streams的目标是增加抽象层，而不是进行底层的流处理，规范将这些问题留给了库实现来解决。
+- [Reactive Streams](http://www.reactive-streams.org/) 规范提供一个非堵塞的异步流处理的背压(backpressure)标准；Reactive Streams的目标是增加抽象层，而不是进行底层的流处理，规范将这些问题留给了库实现来解决。
 
 - 对于JVM，目前已经有多个库实现该标准，RxJava2, akka-streams（Playing 有使用）,[Reactor](https://github.com/reactor/reactor)([Spring Reactive](https://spring.io/blog/2016/02/09/reactive-spring)有使用) 等；
 
@@ -761,7 +761,7 @@ replay 将Flowable变成 ConnectableFlowable, 在connect之后，确保每次消
     f1.count().subscribe(m.apply("count"));
     f1.filter(Files::isDirectory).subscribe(m.apply("filter"));
 ```
-
+### 背压(Backpressure)
 
 问题描述： 在rxjava中会经常遇到一种情况就是被观察者发送消息太快以至于它的操作符或者订阅者不能及时处理相关的消息。那么随之而来的就是如何处理这些未处理的消息。
 
@@ -773,8 +773,8 @@ replay 将Flowable变成 ConnectableFlowable, 在connect之后，确保每次消
     Flowable<Long> f2 = Flowable.interval(200, TimeUnit.MILLISECONDS);
 
     Flowable<Long> f3 = Flowable.zip(f1, f2, (x, y) -> x * 10000 + y);
-
     f3.subscribe(consumer);
+
 ```
 对于出现的背压问题：
  - Flowable默认队列大小为128，并且规范要求，所有的操作符强制支持背压。
