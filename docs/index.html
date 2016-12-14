@@ -33,6 +33,7 @@ RxJava2 响应式编程介绍
         - [ConnectableFlowable & publish & connect](#connectableflowable--publish--connect)
         - [replay](#replay)
         - [cache](#cache)
+    - [背压(Backpressure)问题](#Backpressure)
     - [RxJava 测试](#rxjava-%E6%B5%8B%E8%AF%95)
 - [Reference](#reference)
 
@@ -761,7 +762,7 @@ replay 将Flowable变成 ConnectableFlowable, 在connect之后，确保每次消
     f1.count().subscribe(m.apply("count"));
     f1.filter(Files::isDirectory).subscribe(m.apply("filter"));
 ```
-### 背压(Backpressure)
+### 背压(Backpressure)问题
 
 问题描述： 在rxjava中会经常遇到一种情况就是被观察者发送消息太快以至于它的操作符或者订阅者不能及时处理相关的消息。那么随之而来的就是如何处理这些未处理的消息。
 
